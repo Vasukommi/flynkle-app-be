@@ -2,14 +2,30 @@
 
 This project contains a minimal FastAPI backend. The service exposes a single health check endpoint and can be run in Docker.
 
-## Running with Docker
+## Running with Docker Compose
+
+The project includes a `docker-compose.yml` that starts the API together with
+Redis, MinIO, Qdrant and Postgres. Build and start the stack with:
 
 ```bash
-docker build -t flynkle-api .
-docker run -p 8000:8000 flynkle-api
+docker compose up --build
 ```
 
 The API will be available at `http://localhost:8000`.
+
+### Database migrations
+
+Alembic is configured for database migrations. Create a revision with:
+
+```bash
+alembic revision --autogenerate -m "message"
+```
+
+Apply migrations with:
+
+```bash
+alembic upgrade head
+```
 
 ## Endpoints
 
