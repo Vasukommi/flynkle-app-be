@@ -13,6 +13,11 @@ docker compose up --build
 
 The API will be available at `http://localhost:8000`.
 
+### Environment variables
+
+Copy `.env.example` to `.env` and fill in the values. To enable the chat
+endpoint you must provide a valid `OPENAI_API_KEY`.
+
 ### Database migrations
 
 Alembic is configured for database migrations. Create a revision with:
@@ -32,5 +37,6 @@ alembic upgrade head
 | Method | Path | Description |
 | ------ | ---- | ----------- |
 | GET | `/api/v1/health` | Returns `{"status": "ok"}` |
+| POST | `/api/v1/chat` | Chat with OpenAI GPT-4 |
 
 A root endpoint (`/`) is also available which returns a welcome message but is not included in the OpenAPI schema.
