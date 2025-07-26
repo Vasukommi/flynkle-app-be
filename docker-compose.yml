@@ -3,6 +3,8 @@ services:
   api:
     build: .
     container_name: flynkle-api
+    env_file:
+      - .env
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/postgres
     ports:
