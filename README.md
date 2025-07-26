@@ -5,13 +5,18 @@ This project contains a minimal FastAPI backend. The service exposes a single he
 ## Running with Docker Compose
 
 The project includes a `docker-compose.yml` that starts the API together with
-Redis, MinIO, Qdrant and Postgres. Build and start the stack with:
+Redis, MinIO, Qdrant and Postgres. Build the stack once and start it with:
 
 ```bash
 docker compose up --build
 ```
 
 The API will be available at `http://localhost:8000`.
+
+With the default setup the source code is mounted into the container and
+Uvicorn runs in reload mode. This means you do **not** need to rebuild the
+Docker image when making code changes. Rebuild only when you add new Python
+dependencies.
 
 ### Environment variables
 
@@ -37,6 +42,6 @@ alembic upgrade head
 | Method | Path | Description |
 | ------ | ---- | ----------- |
 | GET | `/api/v1/health` | Returns `{"status": "ok"}` |
-| POST | `/api/v1/chat` | Chat with OpenAI GPT-4 |
+| POST | `/api/v1/chat` | Chat with OpenAI GPT-4. Body: `{"message": "<text>"}`. Returns `{"response": "<reply>"}` |
+| GET | `/` | Returns a welcome message (not in the OpenAPI schema) |
 
-A root endpoint (`/`) is also available which returns a welcome message but is not included in the OpenAPI schema.
