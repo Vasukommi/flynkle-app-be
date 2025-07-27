@@ -8,6 +8,7 @@ This project contains a minimal FastAPI backend that demonstrates a few basic fe
 - Chat endpoint backed by OpenAI
 - Basic user management
 - Users have a `plan` field with `free` as the default
+- Users have an `is_admin` flag for admin access
 
 The aim of the project is to stay lightweight and easy to extend.
 
@@ -93,4 +94,10 @@ Errors use the same structure with an appropriate status code and message.
 | DELETE | `/api/v1/messages/{message_id}` | Delete message |
 | GET | `/api/v1/admin/users` | Admin list users |
 | PATCH | `/api/v1/admin/users/{user_id}` | Admin update user |
+
+### Admin access
+
+Set `is_admin` to `true` on a user to grant admin rights. Admin endpoints
+require the `X-User-ID` header of an admin user. The old `X-Admin` header is no
+longer used.
 

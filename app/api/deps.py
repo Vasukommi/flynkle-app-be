@@ -7,15 +7,16 @@ from app.repositories import user as user_repo
 
 
 def get_current_user(
-    user_id: UUID = Header(..., alias="X-User-ID"),
+    current_user_id: UUID = Header(..., alias="X-User-ID"),
     db: Session = Depends(get_db),
 ):
-    user = user_repo.get_user(db, user_id)
+    user = user_repo.get_user(db, current_user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
 
-def verify_admin(admin: str = Header(None, alias="X-Admin")):
-    if admin != "true":
+def verify_admin(current_user = Depends(get_current_user)):
+    if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Admin privileges required")
+    return current_user
