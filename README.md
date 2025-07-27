@@ -118,6 +118,10 @@ limited. The `/auth/logout` endpoint now invalidates the provided token and
 | POST | `/api/v1/admin/users` | Admin create user |
 | PATCH | `/api/v1/admin/users/{user_id}` | Admin update user |
 | DELETE | `/api/v1/admin/users/{user_id}` | Admin delete user |
+| GET | `/api/v1/admin/users/{user_id}/conversations` | Admin view user's conversations |
+| GET | `/api/v1/admin/users/{user_id}/usage` | Admin view user's usage |
+| POST | `/api/v1/admin/users/{user_id}/suspend` | Suspend user |
+| POST | `/api/v1/admin/users/{user_id}/reinstate` | Reinstate user |
 | POST | `/api/v1/moderation/stage-in` | Stage incoming message |
 | POST | `/api/v1/moderation/stage-out` | Stage outgoing message |
 | GET | `/api/v1/moderation` | List staged messages |
@@ -138,8 +142,8 @@ these limits returns "Upgrade required".
 ### Admin access
 
 Set `is_admin` to `true` on a user to grant admin rights. Admin endpoints
-require a valid JWT `Authorization` header or the `X-User-ID` header. The
-authenticated user must have `is_admin` enabled.
+require a valid JWT `Authorization` header. The authenticated user must have
+`is_admin` enabled.
 
 ## Future Enhancements
 

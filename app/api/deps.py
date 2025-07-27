@@ -39,8 +39,25 @@ def get_current_user(
     return user
 
 
-def verify_admin(current_user=Depends(get_current_user)):
-    """Ensure the authenticated user has admin privileges."""
-    if not current_user.is_admin:
+def verify_admin(
+    authorization: str | None = Header(None, alias="Authorization"),
+    db: Session = Depends(get_db),
+):
+    """Authenticate admin via JWT only."""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Missing credentials")
+    token = authorization.replace("Bearer ", "")
+    try:
+        user_id = decode_access_token(token)
+    except Exception:
+        logger.warning("Invalid token used for admin access")
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    user = user_repo.get_user(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not user.is_active or user.is_suspended:
+        raise HTTPException(status_code=403, detail="Account disabled")
+    if not user.is_admin:
         raise HTTPException(status_code=403, detail="Admin privileges required")
-    return current_user
+    return user

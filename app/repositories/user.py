@@ -64,6 +64,22 @@ def delete_user(db: Session, user: User) -> User:
     return user
 
 
+def suspend_user(db: Session, user: User) -> User:
+    """Suspend a user account."""
+    user.is_suspended = True
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def reinstate_user(db: Session, user: User) -> User:
+    """Reinstate a suspended user."""
+    user.is_suspended = False
+    db.commit()
+    db.refresh(user)
+    return user
+
+
 def list_users(db: Session, skip: int = 0, limit: int = 100, search: Optional[str] = None) -> List[User]:
     query = db.query(User).filter(User.deleted_at.is_(None))
     if search:
