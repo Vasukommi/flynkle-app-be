@@ -12,8 +12,8 @@ from app.core import success, StandardResponse
 router = APIRouter(tags=["plans"])
 
 PLANS = {
-    "free": {"price": 0, "daily_messages": 20},
-    "pro": {"price": 10, "daily_messages": 1000},
+    "free": {"price": 0, "daily_messages": 20, "max_conversations": 3},
+    "pro": {"price": 10, "daily_messages": 1000, "max_conversations": 100},
 }
 
 @router.get("/plans", response_model=StandardResponse, summary="Available plans")

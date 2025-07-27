@@ -3,6 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
+import logging
 
 from app.api.deps import get_current_user
 from app.core import success
@@ -10,8 +11,9 @@ from app.db.database import get_db
 from app.repositories import conversation as convo_repo
 from app.repositories import message as message_repo
 from app.repositories import usage as usage_repo
-from app.repositories import user as user_repo
 from app.api.v1.endpoints.plans import PLANS
+from app.services.llm import chat_with_openai
+from app.services import check_chat_rate_limit
 from app.schemas import (
     ConversationCreate,
     ConversationRead,
@@ -24,6 +26,7 @@ from app.core import success, StandardResponse
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
 message_router = APIRouter(prefix="/messages", tags=["conversations"])
+logger = logging.getLogger(__name__)
 
 
 @router.get("", response_model=StandardResponse, summary="List conversations")
@@ -32,6 +35,7 @@ def list_conversations(
     db: Session = Depends(get_db),
 ) -> List[ConversationRead]:
     convos = convo_repo.list_conversations(db, current_user.user_id)
+    logger.info("Listing conversations for %s", current_user.user_id)
     payload = [ConversationRead.model_validate(c) for c in convos]
     return success(payload).dict()
 
@@ -42,7 +46,13 @@ def create_conversation(
     current_user = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ConversationRead:
+    plan = PLANS.get(current_user.plan, PLANS["free"])
+    count = convo_repo.count_conversations(db, current_user.user_id)
+    if count >= plan["max_conversations"]:
+        logger.info("Conversation limit reached for %s", current_user.user_id)
+        raise HTTPException(status_code=403, detail="Upgrade required")
     conv = convo_repo.create_conversation(db, current_user.user_id, convo_in.title)
+    logger.info("Conversation %s created for %s", conv.conversation_id, current_user.user_id)
     return success(ConversationRead.model_validate(conv)).dict()
 
 
@@ -69,6 +79,7 @@ def update_conversation(
     if not convo or convo.user_id != current_user.user_id:
         raise HTTPException(status_code=404, detail="Conversation not found")
     updated = convo_repo.update_conversation(db, convo, convo_in.title, convo_in.status)
+    logger.info("Conversation %s updated by %s", conversation_id, current_user.user_id)
     return success(ConversationRead.model_validate(updated)).dict()
 
 
@@ -82,6 +93,7 @@ def delete_conversation(
     if not convo or convo.user_id != current_user.user_id:
         raise HTTPException(status_code=404, detail="Conversation not found")
     deleted = convo_repo.delete_conversation(db, convo)
+    logger.info("Conversation %s deleted by %s", conversation_id, current_user.user_id)
     return success(ConversationRead.model_validate(deleted)).dict()
 
 
@@ -97,6 +109,7 @@ def list_messages(
     if not convo or convo.user_id != current_user.user_id:
         raise HTTPException(status_code=404, detail="Conversation not found")
     msgs = message_repo.list_messages(db, conversation_id, skip=skip, limit=limit)
+    logger.info("Listing messages in %s for %s", conversation_id, current_user.user_id)
     payload = [MessageRead.model_validate(m) for m in msgs]
     return success(payload).dict()
 
@@ -123,7 +136,26 @@ def create_message(
         msg_in.content,
         msg_in.message_type,
     )
+    logger.info("Message %s created in %s by %s", msg.message_id, conversation_id, current_user.user_id)
     usage_repo.increment_message_count(db, current_user.user_id, date.today())
+
+    if msg_in.invoke_llm and msg_in.message_type == "user":
+        check_chat_rate_limit(current_user.user_id)
+        try:
+            content, tokens = chat_with_openai(str(msg_in.content))
+        except Exception as exc:  # pragma: no cover - LLM failure
+            logger.exception("LLM call failed")
+        else:
+            ai_msg = message_repo.create_message(
+                db,
+                conversation_id,
+                None,
+                {"text": content},
+                "ai",
+            )
+            usage_repo.increment_token_count(db, current_user.user_id, date.today(), tokens)
+            logger.info("AI message %s created in %s", ai_msg.message_id, conversation_id)
+
     return success(MessageRead.model_validate(msg)).dict()
 
 
@@ -139,6 +171,7 @@ def get_message(
     convo = convo_repo.get_conversation(db, msg.conversation_id)
     if not convo or convo.user_id != current_user.user_id:
         raise HTTPException(status_code=404, detail="Message not found")
+    logger.info("Message %s retrieved by %s", message_id, current_user.user_id)
     return success(MessageRead.model_validate(msg)).dict()
 
 
@@ -162,6 +195,7 @@ def update_message(
         message_type=msg_in.message_type,
         extra=msg_in.extra,
     )
+    logger.info("Message %s updated by %s", message_id, current_user.user_id)
     return success(MessageRead.model_validate(updated)).dict()
 
 
@@ -178,4 +212,5 @@ def delete_message(
     if not convo or convo.user_id != current_user.user_id:
         raise HTTPException(status_code=404, detail="Message not found")
     deleted = message_repo.delete_message(db, msg)
+    logger.info("Message %s deleted by %s", message_id, current_user.user_id)
     return success(MessageRead.model_validate(deleted)).dict()

@@ -105,6 +105,13 @@ limited. The `/auth/logout` endpoint now invalidates the provided token and
 | GET | `/api/v1/admin/users` | Admin list users |
 | PATCH | `/api/v1/admin/users/{user_id}` | Admin update user |
 
+The message routes above store conversation history. They are separate from the
+`/chat` endpoint which streams a single prompt to the language model without
+creating conversation records.
+
+Plan limits restrict how many conversations a user may keep and the number of
+messages they can send per day. Exceeding these limits returns "Upgrade required".
+
 ### User actions
 
 `PATCH` and `DELETE` on user resources require a valid token in the
