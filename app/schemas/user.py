@@ -13,7 +13,6 @@ class UserBase(BaseModel):
     profile: Optional[dict] = None
     is_active: Optional[bool] = True
     is_admin: Optional[bool] = False
-    password: Optional[str] = None
 
 
 class UserCreate(UserBase):
@@ -22,7 +21,7 @@ class UserCreate(UserBase):
 
 
 class UserUpdate(UserBase):
-    pass
+    password: Optional[str] = None
 
 
 class UserRead(UserBase):
