@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 @router.get("", response_model=StandardResponse, summary="List conversations")
 def list_conversations(
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> List[ConversationRead]:
     convos = convo_repo.list_conversations(db, current_user.user_id)
@@ -43,7 +43,7 @@ def list_conversations(
 @router.post("", response_model=StandardResponse, summary="Create conversation")
 def create_conversation(
     convo_in: ConversationCreate,
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ConversationRead:
     plan = PLANS.get(current_user.plan, PLANS["free"])
@@ -52,14 +52,18 @@ def create_conversation(
         logger.info("Conversation limit reached for %s", current_user.user_id)
         raise HTTPException(status_code=403, detail="Upgrade required")
     conv = convo_repo.create_conversation(db, current_user.user_id, convo_in.title)
-    logger.info("Conversation %s created for %s", conv.conversation_id, current_user.user_id)
+    logger.info(
+        "Conversation %s created for %s", conv.conversation_id, current_user.user_id
+    )
     return success(ConversationRead.model_validate(conv)).dict()
 
 
-@router.get("/{conversation_id}", response_model=StandardResponse, summary="Get conversation")
+@router.get(
+    "/{conversation_id}", response_model=StandardResponse, summary="Get conversation"
+)
 def get_conversation(
     conversation_id: UUID,
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ConversationRead:
     convo = convo_repo.get_conversation(db, conversation_id)
@@ -68,11 +72,13 @@ def get_conversation(
     return success(ConversationRead.model_validate(convo)).dict()
 
 
-@router.patch("/{conversation_id}", response_model=StandardResponse, summary="Update conversation")
+@router.patch(
+    "/{conversation_id}", response_model=StandardResponse, summary="Update conversation"
+)
 def update_conversation(
     conversation_id: UUID,
     convo_in: ConversationUpdate,
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ConversationRead:
     convo = convo_repo.get_conversation(db, conversation_id)
@@ -83,10 +89,12 @@ def update_conversation(
     return success(ConversationRead.model_validate(updated)).dict()
 
 
-@router.delete("/{conversation_id}", response_model=StandardResponse, summary="Delete conversation")
+@router.delete(
+    "/{conversation_id}", response_model=StandardResponse, summary="Delete conversation"
+)
 def delete_conversation(
     conversation_id: UUID,
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ConversationRead:
     convo = convo_repo.get_conversation(db, conversation_id)
@@ -97,10 +105,14 @@ def delete_conversation(
     return success(ConversationRead.model_validate(deleted)).dict()
 
 
-@router.get("/{conversation_id}/messages", response_model=StandardResponse, summary="List messages")
+@router.get(
+    "/{conversation_id}/messages",
+    response_model=StandardResponse,
+    summary="List messages",
+)
 def list_messages(
     conversation_id: UUID,
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
@@ -114,11 +126,15 @@ def list_messages(
     return success(payload).dict()
 
 
-@router.post("/{conversation_id}/messages", response_model=StandardResponse, summary="Create message")
+@router.post(
+    "/{conversation_id}/messages",
+    response_model=StandardResponse,
+    summary="Create message",
+)
 def create_message(
     conversation_id: UUID,
     msg_in: MessageCreate,
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> MessageRead:
     convo = convo_repo.get_conversation(db, conversation_id)
@@ -129,6 +145,10 @@ def create_message(
     daily = usage_repo.get_daily_usage(db, current_user.user_id, date.today())
     if daily and daily.message_count >= plan["daily_messages"]:
         raise HTTPException(status_code=403, detail="Upgrade required")
+    if msg_in.message_type == "file":
+        uploads = daily.file_uploads if daily else 0
+        if uploads >= plan.get("max_file_uploads", 0):
+            raise HTTPException(status_code=403, detail="Upgrade required")
     msg = message_repo.create_message(
         db,
         conversation_id,
@@ -136,8 +156,15 @@ def create_message(
         msg_in.content,
         msg_in.message_type,
     )
-    logger.info("Message %s created in %s by %s", msg.message_id, conversation_id, current_user.user_id)
+    logger.info(
+        "Message %s created in %s by %s",
+        msg.message_id,
+        conversation_id,
+        current_user.user_id,
+    )
     usage_repo.increment_message_count(db, current_user.user_id, date.today())
+    if msg_in.message_type == "file":
+        usage_repo.increment_file_uploads(db, current_user.user_id, date.today())
 
     if msg_in.invoke_llm and msg_in.message_type == "user":
         check_chat_rate_limit(current_user.user_id)
@@ -153,16 +180,22 @@ def create_message(
                 {"text": content},
                 "ai",
             )
-            usage_repo.increment_token_count(db, current_user.user_id, date.today(), tokens)
-            logger.info("AI message %s created in %s", ai_msg.message_id, conversation_id)
+            usage_repo.increment_token_count(
+                db, current_user.user_id, date.today(), tokens
+            )
+            logger.info(
+                "AI message %s created in %s", ai_msg.message_id, conversation_id
+            )
 
     return success(MessageRead.model_validate(msg)).dict()
 
 
-@message_router.get("/{message_id}", response_model=StandardResponse, summary="Get message")
+@message_router.get(
+    "/{message_id}", response_model=StandardResponse, summary="Get message"
+)
 def get_message(
     message_id: UUID,
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> MessageRead:
     msg = message_repo.get_message(db, message_id)
@@ -175,11 +208,13 @@ def get_message(
     return success(MessageRead.model_validate(msg)).dict()
 
 
-@message_router.patch("/{message_id}", response_model=StandardResponse, summary="Update message")
+@message_router.patch(
+    "/{message_id}", response_model=StandardResponse, summary="Update message"
+)
 def update_message(
     message_id: UUID,
     msg_in: MessageUpdate,
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> MessageRead:
     msg = message_repo.get_message(db, message_id)
@@ -199,10 +234,12 @@ def update_message(
     return success(MessageRead.model_validate(updated)).dict()
 
 
-@message_router.delete("/{message_id}", response_model=StandardResponse, summary="Delete message")
+@message_router.delete(
+    "/{message_id}", response_model=StandardResponse, summary="Delete message"
+)
 def delete_message(
     message_id: UUID,
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> MessageRead:
     msg = message_repo.get_message(db, message_id)
