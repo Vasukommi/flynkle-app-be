@@ -113,7 +113,9 @@ limited. The `/auth/logout` endpoint now invalidates the provided token and
 | DELETE | `/api/v1/messages/{message_id}` | Delete message |
 | POST | `/api/v1/uploads` | Upload file |
 | GET | `/api/v1/admin/users` | Admin list users |
+| POST | `/api/v1/admin/users` | Admin create user |
 | PATCH | `/api/v1/admin/users/{user_id}` | Admin update user |
+| DELETE | `/api/v1/admin/users/{user_id}` | Admin delete user |
 
 The message routes above store conversation history. They are separate from the
 `/chat` endpoint which streams a single prompt to the language model without
@@ -131,8 +133,8 @@ these limits returns "Upgrade required".
 ### Admin access
 
 Set `is_admin` to `true` on a user to grant admin rights. Admin endpoints
-require the `X-User-ID` header of an admin user. The old `X-Admin` header is no
-longer used.
+require a valid JWT `Authorization` header or the `X-User-ID` header. The
+authenticated user must have `is_admin` enabled.
 
 ## Future Enhancements
 

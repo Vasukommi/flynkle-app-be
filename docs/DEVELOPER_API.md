@@ -104,12 +104,19 @@ The current service exposes a minimal set of endpoints:
 | PATCH  | `/api/v1/messages/{message_id}` | Update message |
 | DELETE | `/api/v1/messages/{message_id}` | Delete message |
 | GET    | `/api/v1/admin/users` | Admin list users |
+| POST   | `/api/v1/admin/users` | Admin create user |
 | PATCH  | `/api/v1/admin/users/{user_id}` | Admin update user |
+| DELETE | `/api/v1/admin/users/{user_id}` | Admin delete user |
 
 ### User actions
 
 `PATCH` and `DELETE` on user routes require authentication via the
 `Authorization` header or `X-User-ID`.
+
+### Admin access
+
+Admin routes use the same authentication headers. The authenticated user must
+have `is_admin` set to `true`.
 
 This table matches the one in the main `README.md` and should be updated whenever routes change.
 

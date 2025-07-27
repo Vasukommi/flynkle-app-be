@@ -39,20 +39,8 @@ def get_current_user(
     return user
 
 
-def verify_admin(
-    x_user_id: UUID | None = Header(None, alias="X-User-ID"),
-    db: Session = Depends(get_db),
-):
-    """Validate admin user by ID header only."""
-    if not x_user_id:
-        raise HTTPException(status_code=401, detail="Missing admin header")
-
-    user = user_repo.get_user(db, x_user_id)
-    if not user:
-        logger.warning("Admin user %s not found", x_user_id)
-        raise HTTPException(status_code=404, detail="User not found")
-    if not user.is_admin:
+def verify_admin(current_user=Depends(get_current_user)):
+    """Ensure the authenticated user has admin privileges."""
+    if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Admin privileges required")
-    if not user.is_active or user.is_suspended:
-        raise HTTPException(status_code=403, detail="Account disabled")
-    return user
+    return current_user

@@ -34,25 +34,41 @@ def client():
     os.remove("test_admin.db")
 
 
-def create_user(client, email, is_admin=False):
+def create_user_and_login(client, email, is_admin=False):
     data = {"provider": "email", "email": email, "password": "pwd"}
     if is_admin:
         data["is_admin"] = True
     resp = client.post("/api/v1/users", json=data)
-    return resp.json()["data"]["user_id"]
+    user_id = resp.json()["data"]["user_id"]
+    login = client.post("/api/v1/auth/login", json={"email": email, "password": "pwd"})
+    token = login.json()["data"]["access_token"]
+    return user_id, token
 
 
 def test_admin_required(client):
-    user_id = create_user(client, "user@example.com", is_admin=False)
-    headers = {"X-User-ID": user_id}
+    _, token = create_user_and_login(client, "user@example.com")
+    headers = {"Authorization": f"Bearer {token}"}
     resp = client.get("/api/v1/admin/users", headers=headers)
     assert resp.status_code == 403
     assert resp.json()["message"] == "Admin privileges required"
 
 
 def test_admin_can_access(client):
-    admin_id = create_user(client, "admin@example.com", is_admin=True)
-    headers = {"X-User-ID": admin_id}
+    _, token = create_user_and_login(client, "admin@example.com", is_admin=True)
+    headers = {"Authorization": f"Bearer {token}"}
     resp = client.get("/api/v1/admin/users", headers=headers)
     assert resp.status_code == 200
+    assert resp.json()["code"] == 200
 
+
+def test_admin_create_and_delete_user(client):
+    _, token = create_user_and_login(client, "admin2@example.com", is_admin=True)
+    headers = {"Authorization": f"Bearer {token}"}
+    new_user = {"provider": "email", "email": "new@example.com", "password": "pwd"}
+    create_resp = client.post("/api/v1/admin/users", headers=headers, json=new_user)
+    assert create_resp.status_code == 200
+    uid = create_resp.json()["data"]["user_id"]
+
+    delete_resp = client.delete(f"/api/v1/admin/users/{uid}", headers=headers)
+    assert delete_resp.status_code == 200
+    assert delete_resp.json()["data"]["user_id"] == uid
