@@ -13,10 +13,12 @@ class UserBase(BaseModel):
     profile: Optional[dict] = None
     is_active: Optional[bool] = True
     is_admin: Optional[bool] = False
+    password: Optional[str] = None
 
 
 class UserCreate(UserBase):
     provider: str
+    password: str
 
 
 class UserUpdate(UserBase):

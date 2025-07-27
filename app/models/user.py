@@ -29,3 +29,6 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
 
     is_deleted = Column(Boolean, default=False)
+    
+    password_hash = Column(String, nullable=True)
+
