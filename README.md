@@ -7,6 +7,7 @@ This project contains a minimal FastAPI backend that demonstrates a few basic fe
 - Health check endpoint
 - Chat endpoint backed by OpenAI
 - Basic user management
+- Users have a `plan` field with `free` as the default
 
 The aim of the project is to stay lightweight and easy to extend.
 

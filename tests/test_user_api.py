@@ -38,3 +38,10 @@ def test_create_duplicate_user(client):
     resp2 = client.post("/api/v1/users", json=data)
     assert resp2.status_code == 400
     assert resp2.json() == {"detail": "User already exists"}
+
+
+def test_user_has_default_plan(client):
+    data = {"provider": "email", "email": "plan@example.com", "password": "pwd"}
+    resp = client.post("/api/v1/users", json=data)
+    assert resp.status_code == 200
+    assert resp.json()["plan"] == "free"
