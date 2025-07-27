@@ -142,4 +142,5 @@ authenticated user must have `is_admin` enabled.
 - Add background job queue for long running tasks
 - Implement OAuth providers for enterprise authentication
 - Provide OpenAPI schemas for client code generation
+- Integrate payment processing in `charge_plan` to bill upgrades
 

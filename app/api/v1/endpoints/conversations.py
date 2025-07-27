@@ -158,12 +158,12 @@ def create_message(
     daily = usage_repo.get_daily_usage(db, current_user.user_id, date.today())
     if daily and daily.message_count >= plan["daily_messages"]:
         raise HTTPException(status_code=403, detail="Upgrade required")
-    if daily and daily.token_count is not None and daily.token_count >= plan["daily_tokens"]:
+    if (
+        daily
+        and daily.token_count is not None
+        and daily.token_count >= plan["daily_tokens"]
+    ):
         raise HTTPException(status_code=403, detail="Upgrade required")
-    if msg_in.message_type == "file":
-        uploads = daily.file_uploads if daily else 0
-        if uploads >= plan.get("max_file_uploads", 0):
-            raise HTTPException(status_code=403, detail="Upgrade required")
     msg = message_repo.create_message(
         db,
         conversation_id,
@@ -178,8 +178,6 @@ def create_message(
         current_user.user_id,
     )
     usage_repo.increment_message_count(db, current_user.user_id, date.today())
-    if msg_in.message_type == "file":
-        usage_repo.increment_file_uploads(db, current_user.user_id, date.today())
 
     if msg_in.invoke_llm and msg_in.message_type == "user":
         check_chat_rate_limit(current_user.user_id)
