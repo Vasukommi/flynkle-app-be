@@ -11,8 +11,8 @@ openai_client = OpenAI(api_key=settings.openai_api_key)
 logger = logging.getLogger(__name__)
 
 
-def chat_with_openai(message: str) -> str:
-    """Send a prompt to OpenAI GPT-4 and return the response."""
+def chat_with_openai(message: str) -> tuple[str, int]:
+    """Send a prompt to OpenAI GPT-4 and return the response and token usage."""
 
     try:
         response: Any = openai_client.chat.completions.create(
@@ -28,7 +28,12 @@ def chat_with_openai(message: str) -> str:
                 {"role": "user", "content": message},
             ],
         )
-        return response.choices[0].message.content
+        tokens = 0
+        try:
+            tokens = int(response.usage.total_tokens)
+        except Exception:  # pragma: no cover - optional
+            tokens = 0
+        return response.choices[0].message.content, tokens
     except OpenAIError as exc:  # pragma: no cover - API errors
         logger.exception("OpenAI API request failed")
         raise RuntimeError("OpenAI API request failed") from exc

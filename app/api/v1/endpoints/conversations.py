@@ -11,6 +11,7 @@ from app.repositories import conversation as convo_repo
 from app.repositories import message as message_repo
 from app.repositories import usage as usage_repo
 from app.repositories import user as user_repo
+from app.api.v1.endpoints.plans import PLANS
 from app.schemas import (
     ConversationCreate,
     ConversationRead,
@@ -110,11 +111,11 @@ def create_message(
     convo = convo_repo.get_conversation(db, conversation_id)
     if not convo or convo.user_id != current_user.user_id:
         raise HTTPException(status_code=404, detail="Conversation not found")
-    # plan enforcement
-    if current_user.plan == "free":
-        daily = usage_repo.get_daily_usage(db, current_user.user_id, date.today())
-        if daily and daily.message_count >= 20:
-            raise HTTPException(status_code=403, detail="Upgrade required")
+    # plan enforcement using configured plans
+    plan = PLANS.get(current_user.plan, PLANS["free"])
+    daily = usage_repo.get_daily_usage(db, current_user.user_id, date.today())
+    if daily and daily.message_count >= plan["daily_messages"]:
+        raise HTTPException(status_code=403, detail="Upgrade required")
     msg = message_repo.create_message(
         db,
         conversation_id,
