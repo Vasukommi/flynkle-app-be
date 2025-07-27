@@ -86,9 +86,12 @@ limited. The `/auth/logout` endpoint now invalidates the provided token and
 | PATCH | `/api/v1/users/{user_id}` | Partially update a user |
 | DELETE | `/api/v1/users/{user_id}` | Delete a user |
 | GET | `/` | Returns a welcome message (not in the OpenAPI schema) |
-| POST | `/api/v1/auth/login` | Login and receive a token |
+| POST | `/api/v1/auth/login` | Login and receive access & refresh tokens |
 | POST | `/api/v1/auth/logout` | Logout using token |
 | POST | `/api/v1/auth/verify` | Verify token validity |
+| POST | `/api/v1/auth/refresh` | Refresh access token |
+| POST | `/api/v1/auth/request-reset` | Request password reset OTP |
+| POST | `/api/v1/auth/reset-password` | Reset password with OTP |
 | GET | `/api/v1/users/me` | Get current user |
 | PATCH | `/api/v1/users/me` | Update current user |
 | DELETE | `/api/v1/users/me` | Delete current user |
