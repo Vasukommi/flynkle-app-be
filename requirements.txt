@@ -13,3 +13,4 @@ dotenv
 passlib[bcrypt]
 pydantic-settings
 PyJWT
+python-multipart

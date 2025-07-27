@@ -6,6 +6,7 @@ from .plans import router as plans_router
 from .conversations import router as conversations_router, message_router
 from .uploads import router as uploads_router
 from .admin import router as admin_router
+from .moderation import router as moderation_router
 
 __all__ = [
     "auth_router",
@@ -17,4 +18,5 @@ __all__ = [
     "message_router",
     "uploads_router",
     "admin_router",
+    "moderation_router",
 ]

@@ -78,7 +78,7 @@ limited. The `/auth/logout` endpoint now invalidates the provided token and
 | Method | Path | Description |
 | ------ | ---- | ----------- |
 | GET | `/api/v1/health` | Returns `{"status": "ok"}` |
-| POST | `/api/v1/chat` | Chat with OpenAI GPT-4. Body: `{"message": "<text>", "conversation_id": "<uuid>"}`. Returns `{"response": "<reply>", "tokens": <n>}` |
+| POST | `/api/v1/chat` | Chat with OpenAI GPT-4. Body: `{"message": "<text>", "conversation_id": "<uuid>"}`. Add `?stream=true` to stream tokens as they are generated. |
 | GET | `/api/v1/users` | List users with pagination and search |
 | POST | `/api/v1/users` | Create a new user |
 | GET | `/api/v1/users/{user_id}` | Retrieve a user by ID |
@@ -116,10 +116,13 @@ limited. The `/auth/logout` endpoint now invalidates the provided token and
 | POST | `/api/v1/admin/users` | Admin create user |
 | PATCH | `/api/v1/admin/users/{user_id}` | Admin update user |
 | DELETE | `/api/v1/admin/users/{user_id}` | Admin delete user |
+| POST | `/api/v1/moderation/stage-in` | Stage incoming message |
+| POST | `/api/v1/moderation/stage-out` | Stage outgoing message |
+| GET | `/api/v1/moderation` | List staged messages |
 
-The message routes above store conversation history. They are separate from the
-`/chat` endpoint which streams a single prompt to the language model without
-creating conversation records.
+The message routes above store conversation history. The `/chat` endpoint can
+also attach to a conversation when a `conversation_id` is provided, otherwise it
+streams a single prompt without persisting any messages.
 
 Plan limits restrict how many conversations a user may keep, how many messages
 they can send per day and the total GPT tokens allowed each day. Exceeding
