@@ -9,7 +9,7 @@ from app.db.database import get_db
 from app.schemas.chat import ChatRequest
 from app.services.llm import chat_with_openai
 from app.services import check_chat_rate_limit
-from app.api.v1.endpoints.plans import PLANS
+from app.core import PLANS
 from app.repositories import usage as usage_repo
 from app.api.deps import get_current_user
 
@@ -30,6 +30,8 @@ async def chat(
     plan = PLANS.get(current_user.plan, PLANS["free"])
     daily = usage_repo.get_daily_usage(db, current_user.user_id, date.today())
     if daily and daily.message_count >= plan["daily_messages"]:
+        raise HTTPException(status_code=403, detail="Upgrade required")
+    if daily and daily.token_count is not None and daily.token_count >= plan["daily_tokens"]:
         raise HTTPException(status_code=403, detail="Upgrade required")
 
     # rate limiting
