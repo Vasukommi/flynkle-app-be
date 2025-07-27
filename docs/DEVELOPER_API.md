@@ -21,6 +21,32 @@ This document summarizes the planned API endpoints and database tables for the p
 - `last_login` **TIMESTAMP**
 - `profile` **JSONB** misc preferences
 
+### Conversations
+- `conversation_id` **UUID** primary key
+- `user_id` **UUID** foreign key to `users`
+- `title` **TEXT** optional title
+- `created_at` **TIMESTAMP** when the conversation was created
+- `updated_at` **TIMESTAMP** updated on each message
+- `status` **TEXT** state such as `active` or `archived`
+
+### Messages
+- `message_id` **UUID** primary key
+- `conversation_id` **UUID** foreign key to `conversations`
+- `user_id` **UUID** foreign key to `users` (nullable for system/AI messages)
+- `content` **JSONB** message body or structured data
+- `timestamp` **TIMESTAMP** when the message was created
+- `message_type` **TEXT** e.g. `user`, `ai`, `system`
+- `metadata` **JSONB** optional extra info
+
+### Usage
+- `usage_id` **UUID** primary key
+- `user_id` **UUID** foreign key to `users`
+- `date` **DATE** day the usage entry applies to
+- `message_count` **INT** messages sent on that day
+- `token_count` **INT** optional token count
+- `file_uploads` **INT** optional upload count
+- `last_updated_at` **TIMESTAMP** updated when counts change
+
 ## API Endpoints
 
 The current service exposes a minimal set of endpoints:
@@ -37,4 +63,4 @@ The current service exposes a minimal set of endpoints:
 
 This table matches the one in the main `README.md` and should be updated whenever routes change.
 
-Future revisions may introduce conversations, messages and usage tracking to enforce plan quotas as outlined in the design document.
+These tables enable conversation history and quota tracking which can be used to enforce subscription plans.
