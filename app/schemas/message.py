@@ -1,0 +1,21 @@
+from datetime import datetime
+from typing import Optional
+from uuid import UUID
+from pydantic import BaseModel
+
+class MessageBase(BaseModel):
+    content: dict
+    message_type: str
+
+class MessageCreate(MessageBase):
+    pass
+
+class MessageRead(MessageBase):
+    message_id: UUID
+    conversation_id: UUID
+    user_id: Optional[UUID] = None
+    timestamp: Optional[datetime] = None
+    extra: Optional[dict] = None
+
+    class Config:
+        orm_mode = True

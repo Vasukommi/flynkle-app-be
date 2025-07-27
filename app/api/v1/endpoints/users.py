@@ -57,3 +57,24 @@ def delete_user(user_id: UUID, db: Session = Depends(get_db)) -> UserRead:
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user_repo.delete_user(db, user)
+
+from app.api.deps import get_current_user
+
+@router.get("/me", response_model=UserRead, summary="Get current user")
+def read_me(current_user = Depends(get_current_user)) -> UserRead:
+    return current_user
+
+@router.patch("/me", response_model=UserRead, summary="Update current user")
+def update_me(
+    user_in: UserUpdate,
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> UserRead:
+    return user_repo.update_user(db, current_user, user_in)
+
+@router.delete("/me", response_model=UserRead, summary="Delete current user")
+def delete_me(
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> UserRead:
+    return user_repo.delete_user(db, current_user)
