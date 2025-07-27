@@ -29,10 +29,16 @@ def create_user(user_in: UserCreate, db: Session = Depends(get_db)) -> UserRead:
 
 
 @router.get("/{user_id}", response_model=StandardResponse, summary="Get user")
-def get_user(user_id: UUID, db: Session = Depends(get_db)) -> UserRead:
+def get_user(
+    user_id: UUID,
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> UserRead:
     user = user_repo.get_user(db, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if current_user.user_id != user.user_id and not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Forbidden")
     return success(UserRead.model_validate(user)).dict()
 
 
@@ -41,8 +47,11 @@ def list_users(
     skip: int = 0,
     limit: int = 100,
     search: Optional[str] = Query(None),
+    current_user = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> List[UserRead]:
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Forbidden")
     users = user_repo.list_users(db, skip=skip, limit=limit, search=search)
     payload = [UserRead.model_validate(u) for u in users]
     return success(payload).dict()

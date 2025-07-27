@@ -21,12 +21,20 @@ def create_user(db: Session, user_in: UserCreate) -> User:
 
 
 def get_user(db: Session, user_id: UUID) -> Optional[User]:
-    return db.query(User).filter(User.user_id == user_id).first()
+    return (
+        db.query(User)
+        .filter(User.user_id == user_id, User.deleted_at.is_(None))
+        .first()
+    )
 
 
 def get_user_by_email(db: Session, email: str) -> Optional[User]:
     """Retrieve a user by email."""
-    return db.query(User).filter(User.email == email).first()
+    return (
+        db.query(User)
+        .filter(User.email == email, User.deleted_at.is_(None))
+        .first()
+    )
 
 
 def update_user(db: Session, user: User, user_in: UserUpdate) -> User:
@@ -49,13 +57,15 @@ def update_last_login(db: Session, user: User) -> None:
 
 
 def delete_user(db: Session, user: User) -> User:
-    db.delete(user)
+    user.is_active = False
+    user.deleted_at = datetime.utcnow()
     db.commit()
+    db.refresh(user)
     return user
 
 
 def list_users(db: Session, skip: int = 0, limit: int = 100, search: Optional[str] = None) -> List[User]:
-    query = db.query(User)
+    query = db.query(User).filter(User.deleted_at.is_(None))
     if search:
         pattern = f"%{search}%"
         query = query.filter(or_(User.email.ilike(pattern), User.phone_number.ilike(pattern)))

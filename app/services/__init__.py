@@ -6,7 +6,12 @@ from .rate_limiter import (
     check_login_rate_limit,
     check_message_rate_limit,
 )
-from .password_reset import generate_otp, verify_and_consume_otp
+from .password_reset import (
+    generate_otp,
+    verify_and_consume_otp,
+    generate_verification_token,
+    verify_email_token,
+)
 
 __all__ = [
     "chat_with_openai",
@@ -15,4 +20,6 @@ __all__ = [
     "check_message_rate_limit",
     "generate_otp",
     "verify_and_consume_otp",
+    "generate_verification_token",
+    "verify_email_token",
 ]
