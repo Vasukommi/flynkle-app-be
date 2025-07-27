@@ -18,7 +18,7 @@ The aim of the project is to stay lightweight and easy to extend.
 ## Running with Docker Compose
 
 The project includes a `docker-compose.yml` that starts the API together with
-Redis, MinIO, Qdrant and Postgres. Build the stack once and start it with:
+Redis, MinIO and Postgres. Build the stack once and start it with:
 
 ```bash
 docker compose up --build
@@ -35,6 +35,9 @@ dependencies.
 
 Copy `.env.example` to `.env` and fill in the values. To enable the chat
 endpoint you must provide a valid `OPENAI_API_KEY`.
+
+The upload routes store files in a MinIO bucket configured via the `MINIO_*`
+environment variables.
 
 ### Database migrations
 
@@ -124,6 +127,7 @@ limited. The `/auth/logout` endpoint now invalidates the provided token and
 | GET | `/api/v1/admin/users/{user_id}/usage` | Admin view user's usage |
 | POST | `/api/v1/admin/users/{user_id}/suspend` | Suspend user |
 | POST | `/api/v1/admin/users/{user_id}/reinstate` | Reinstate user |
+| POST | `/api/v1/admin/users/{user_id}/restore` | Restore deleted user |
 | POST | `/api/v1/moderation/stage-in` | Stage incoming message |
 | POST | `/api/v1/moderation/stage-out` | Stage outgoing message |
 | GET | `/api/v1/moderation` | List staged messages |
@@ -151,7 +155,7 @@ require a valid JWT `Authorization` header. The authenticated user must have
 
 - Replace in-memory rate limiting with Redis for horizontal scaling
 - Add background job queue for long running tasks
-- Implement OAuth providers for enterprise authentication
+- Implement OAuth/OIDC providers for enterprise authentication (see `docs/OAUTH_OIDC.md`)
 - Provide OpenAPI schemas for client code generation
 - Integrate payment processing in `charge_plan` to bill upgrades
 

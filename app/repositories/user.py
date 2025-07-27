@@ -28,6 +28,11 @@ def get_user(db: Session, user_id: UUID) -> Optional[User]:
     )
 
 
+def get_user_include_deleted(db: Session, user_id: UUID) -> Optional[User]:
+    """Return a user regardless of deletion state."""
+    return db.query(User).filter(User.user_id == user_id).first()
+
+
 def get_user_by_email(db: Session, email: str) -> Optional[User]:
     """Retrieve a user by email."""
     return (
@@ -75,6 +80,15 @@ def suspend_user(db: Session, user: User) -> User:
 def reinstate_user(db: Session, user: User) -> User:
     """Reinstate a suspended user."""
     user.is_suspended = False
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def restore_user(db: Session, user: User) -> User:
+    """Restore a soft-deleted user."""
+    user.is_active = True
+    user.deleted_at = None
     db.commit()
     db.refresh(user)
     return user
