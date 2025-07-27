@@ -3,6 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from app.db.database import get_db
 from app.repositories import user as user_repo
@@ -13,7 +14,11 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 @router.post("", response_model=UserRead, summary="Create user")
 def create_user(user_in: UserCreate, db: Session = Depends(get_db)) -> UserRead:
-    return user_repo.create_user(db, user_in)
+    try:
+        return user_repo.create_user(db, user_in)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="User already exists")
 
 
 @router.get("/{user_id}", response_model=UserRead, summary="Get user")

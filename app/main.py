@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
@@ -21,6 +21,13 @@ async def handle_db_exceptions(request: Request, exc: SQLAlchemyError):
     """Return a JSON response for database errors instead of crashing."""
     logger.exception("Database error")
     return JSONResponse(status_code=500, content={"detail": "Database error"})
+
+
+@app.exception_handler(HTTPException)
+async def handle_http_exceptions(request: Request, exc: HTTPException):
+    """Return a consistent JSON structure for HTTP errors."""
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
 
 app.add_middleware(
     CORSMiddleware,
