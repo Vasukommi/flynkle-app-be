@@ -6,30 +6,15 @@ from typing import List
 from app.api.deps import get_current_user
 from app.db.database import get_db
 from app.repositories import usage as usage_repo
+from app.repositories import conversation as convo_repo
 from app.schemas import UsageRead
-from app.core import success, StandardResponse
+from app.core import success, StandardResponse, PLANS
+from app.services.billing import charge_plan
 
 import logging
 
 router = APIRouter(tags=["plans"])
 logger = logging.getLogger(__name__)
-
-PLANS = {
-    "free": {
-        "price": 0,
-        "daily_messages": 20,
-        "max_conversations": 3,
-        "max_file_uploads": 0,
-        "max_agents": 0,
-    },
-    "pro": {
-        "price": 10,
-        "daily_messages": 1000,
-        "max_conversations": 100,
-        "max_file_uploads": 100,
-        "max_agents": 5,
-    },
-}
 
 
 @router.get("/plans", response_model=StandardResponse, summary="Available plans")
@@ -64,8 +49,27 @@ def upgrade_plan(
         logger.info("User %s already on %s plan", current_user.user_id, plan)
         return success({"detail": "plan unchanged"}).dict()
 
-    # simulate billing step
-    logger.info("Charging %s for %s plan", current_user.user_id, plan)
+    # Prevent downgrades when over quota
+    new_plan = PLANS[plan]
+    convo_count = convo_repo.count_conversations(db, current_user.user_id)
+    if convo_count > new_plan["max_conversations"]:
+        raise HTTPException(status_code=400, detail="Over conversation quota")
+    daily = usage_repo.get_daily_usage(db, current_user.user_id, date.today())
+    if daily:
+        if daily.message_count > new_plan["daily_messages"]:
+            raise HTTPException(status_code=400, detail="Over message quota")
+        if (
+            daily.token_count is not None
+            and daily.token_count > new_plan["daily_tokens"]
+        ):
+            raise HTTPException(status_code=400, detail="Over token quota")
+        if (
+            daily.file_uploads is not None
+            and daily.file_uploads > new_plan["max_file_uploads"]
+        ):
+            raise HTTPException(status_code=400, detail="Over file quota")
+
+    charge_plan(str(current_user.user_id), plan)
 
     current_user.plan = plan
     db.commit()

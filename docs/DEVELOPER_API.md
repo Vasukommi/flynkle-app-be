@@ -114,4 +114,4 @@ The current service exposes a minimal set of endpoints:
 This table matches the one in the main `README.md` and should be updated whenever routes change.
 
 These tables enable conversation history and quota tracking which can be used to enforce subscription plans.
-Each plan defines the maximum number of conversations a user may keep and how many messages they can send per day. Message endpoints store data in the tables while `/chat` sends a single prompt without persisting any messages.
+Each plan defines the maximum number of conversations a user may keep, how many messages and GPT tokens they can use per day. Message endpoints store data in the tables while `/chat` sends a single prompt without persisting any messages.

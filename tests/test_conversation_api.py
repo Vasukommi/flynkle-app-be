@@ -107,3 +107,42 @@ def test_conversation_limit(client):
     resp = client.post("/api/v1/conversations", headers=headers, json={})
     assert resp.status_code == 403
     assert resp.json()["message"] == "Upgrade required"
+
+
+def test_token_limit_enforced(client, monkeypatch):
+    token = create_token(client)
+    headers = {"Authorization": f"Bearer {token}"}
+    conv = client.post("/api/v1/conversations", headers=headers, json={}).json()["data"]
+    import app.core.plans as plans
+    plans.PLANS["free"]["daily_tokens"] = 2
+    import app.api.v1.endpoints.conversations as conv_ep
+    monkeypatch.setattr(conv_ep, "chat_with_openai", lambda m: ("ok", 1))
+    orig_rate = conv_ep.check_message_rate_limit
+    conv_ep.check_message_rate_limit = lambda _u: None
+    try:
+        for _ in range(2):
+            resp = client.post(
+                f"/api/v1/conversations/{conv['conversation_id']}/messages",
+                headers=headers,
+                json={"content": {"t": 1}, "message_type": "user", "invoke_llm": True},
+            )
+            assert resp.status_code == 200
+        resp = client.post(
+            f"/api/v1/conversations/{conv['conversation_id']}/messages",
+            headers=headers,
+            json={"content": {"t": 1}, "message_type": "user", "invoke_llm": True},
+        )
+        assert resp.status_code == 403
+    finally:
+        conv_ep.check_message_rate_limit = orig_rate
+
+
+def test_downgrade_blocked_when_over_quota(client):
+    token = create_token(client)
+    headers = {"Authorization": f"Bearer {token}"}
+    resp = client.post("/api/v1/user/upgrade", params={"plan": "pro"}, headers=headers)
+    assert resp.status_code == 200
+    for _ in range(4):
+        client.post("/api/v1/conversations", headers=headers, json={})
+    resp = client.post("/api/v1/user/upgrade", params={"plan": "free"}, headers=headers)
+    assert resp.status_code == 400

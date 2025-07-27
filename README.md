@@ -117,8 +117,9 @@ The message routes above store conversation history. They are separate from the
 `/chat` endpoint which streams a single prompt to the language model without
 creating conversation records.
 
-Plan limits restrict how many conversations a user may keep and the number of
-messages they can send per day. Exceeding these limits returns "Upgrade required".
+Plan limits restrict how many conversations a user may keep, how many messages
+they can send per day and the total GPT tokens allowed each day. Exceeding
+these limits returns "Upgrade required".
 
 ### User actions
 

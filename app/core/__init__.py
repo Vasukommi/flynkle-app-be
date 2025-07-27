@@ -2,6 +2,7 @@
 
 from .config import settings
 from .responses import StandardResponse, success
+from .plans import PLANS
 from .security import (
     hash_password,
     verify_password,
@@ -17,6 +18,7 @@ __all__ = [
     "settings",
     "StandardResponse",
     "success",
+    "PLANS",
     "hash_password",
     "verify_password",
     "create_access_token",

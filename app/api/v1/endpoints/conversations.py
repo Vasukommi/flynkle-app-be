@@ -11,7 +11,7 @@ from app.db.database import get_db
 from app.repositories import conversation as convo_repo
 from app.repositories import message as message_repo
 from app.repositories import usage as usage_repo
-from app.api.v1.endpoints.plans import PLANS
+from app.core import PLANS
 from app.services.llm import chat_with_openai
 from app.services import check_chat_rate_limit, check_message_rate_limit
 from app.schemas import (
@@ -145,6 +145,8 @@ def create_message(
     plan = PLANS.get(current_user.plan, PLANS["free"])
     daily = usage_repo.get_daily_usage(db, current_user.user_id, date.today())
     if daily and daily.message_count >= plan["daily_messages"]:
+        raise HTTPException(status_code=403, detail="Upgrade required")
+    if daily and daily.token_count is not None and daily.token_count >= plan["daily_tokens"]:
         raise HTTPException(status_code=403, detail="Upgrade required")
     if msg_in.message_type == "file":
         uploads = daily.file_uploads if daily else 0

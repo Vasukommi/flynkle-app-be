@@ -12,6 +12,7 @@ from .password_reset import (
     generate_verification_token,
     verify_email_token,
 )
+from .billing import charge_plan
 
 __all__ = [
     "chat_with_openai",
@@ -22,4 +23,5 @@ __all__ = [
     "verify_and_consume_otp",
     "generate_verification_token",
     "verify_email_token",
+    "charge_plan",
 ]
