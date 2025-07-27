@@ -72,3 +72,48 @@ def test_admin_create_and_delete_user(client):
     delete_resp = client.delete(f"/api/v1/admin/users/{uid}", headers=headers)
     assert delete_resp.status_code == 200
     assert delete_resp.json()["data"]["user_id"] == uid
+
+
+def test_admin_requires_jwt_header(client):
+    admin_id, _ = create_user_and_login(client, "tokenless@example.com", is_admin=True)
+    resp = client.get("/api/v1/admin/users", headers={"X-User-ID": admin_id})
+    assert resp.status_code == 401
+
+
+def test_suspend_and_reinstate_user(client):
+    user_id, _ = create_user_and_login(client, "target@example.com")
+    _, token = create_user_and_login(client, "boss@example.com", is_admin=True)
+    headers = {"Authorization": f"Bearer {token}"}
+    suspend = client.post(f"/api/v1/admin/users/{user_id}/suspend", headers=headers)
+    assert suspend.status_code == 200
+    assert suspend.json()["data"]["is_suspended"] is True
+    reinstate = client.post(
+        f"/api/v1/admin/users/{user_id}/reinstate", headers=headers
+    )
+    assert reinstate.status_code == 200
+    assert reinstate.json()["data"]["is_suspended"] is False
+
+
+def test_admin_view_conversations_and_usage(client):
+    user_id, token = create_user_and_login(client, "convuser@example.com")
+    _, admin_token = create_user_and_login(
+        client, "watcher@example.com", is_admin=True
+    )
+    user_headers = {"Authorization": f"Bearer {token}"}
+    conv = client.post("/api/v1/conversations", headers=user_headers, json={}).json()[
+        "data"
+    ]
+    client.post(
+        f"/api/v1/conversations/{conv['conversation_id']}/messages",
+        headers=user_headers,
+        json={"content": {"t": 1}, "message_type": "user"},
+    )
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+    convs = client.get(
+        f"/api/v1/admin/users/{user_id}/conversations", headers=admin_headers
+    )
+    assert convs.status_code == 200
+    assert len(convs.json()["data"]) == 1
+    usage = client.get(f"/api/v1/admin/users/{user_id}/usage", headers=admin_headers)
+    assert usage.status_code == 200
+    assert len(usage.json()["data"]) >= 1
