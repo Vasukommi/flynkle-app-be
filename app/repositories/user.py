@@ -6,10 +6,13 @@ from sqlalchemy import or_
 
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate
+from app.core.security import hash_password
 
 
 def create_user(db: Session, user_in: UserCreate) -> User:
-    user = User(**user_in.dict(exclude_unset=True))
+    data = user_in.dict(exclude_unset=True)
+    password = data.pop("password")
+    user = User(**data, password_hash=hash_password(password))
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -21,8 +24,12 @@ def get_user(db: Session, user_id: UUID) -> Optional[User]:
 
 
 def update_user(db: Session, user: User, user_in: UserUpdate) -> User:
-    for field, value in user_in.dict(exclude_unset=True).items():
+    update_data = user_in.dict(exclude_unset=True)
+    password = update_data.pop("password", None)
+    for field, value in update_data.items():
         setattr(user, field, value)
+    if password:
+        user.password_hash = hash_password(password)
     db.commit()
     db.refresh(user)
     return user
