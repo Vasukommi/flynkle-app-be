@@ -61,6 +61,12 @@ All endpoints return:
 
 Errors follow the same structure with an appropriate status code.
 
+### Authentication
+
+Login returns a JWT token. Include it in the `Authorization` header as
+`Bearer <token>` when accessing protected routes. Logout and verify use the
+same header.
+
 ## API Endpoints
 
 The current service exposes a minimal set of endpoints:
@@ -74,9 +80,9 @@ The current service exposes a minimal set of endpoints:
 | GET    | `/api/v1/users/{user_id}` | Retrieve a user by ID |
 | PUT    | `/api/v1/users/{user_id}` | Update a user |
 | DELETE | `/api/v1/users/{user_id}` | Delete a user |
-| POST   | `/api/v1/auth/login` | Login placeholder |
-| POST   | `/api/v1/auth/logout` | Logout placeholder |
-| POST   | `/api/v1/auth/verify` | Verification placeholder |
+| POST   | `/api/v1/auth/login` | Login and receive a token |
+| POST   | `/api/v1/auth/logout` | Logout using token |
+| POST   | `/api/v1/auth/verify` | Verify token validity |
 | GET    | `/api/v1/users/me` | Get current user |
 | PATCH  | `/api/v1/users/me` | Update current user |
 | DELETE | `/api/v1/users/me` | Delete current user |
