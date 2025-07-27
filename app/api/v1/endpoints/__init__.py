@@ -4,6 +4,7 @@ from .health import router as health_router
 from .users import router as users_router
 from .plans import router as plans_router
 from .conversations import router as conversations_router, message_router
+from .uploads import router as uploads_router
 from .admin import router as admin_router
 
 __all__ = [
@@ -14,5 +15,6 @@ __all__ = [
     "plans_router",
     "conversations_router",
     "message_router",
+    "uploads_router",
     "admin_router",
 ]

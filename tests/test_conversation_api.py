@@ -146,3 +146,63 @@ def test_downgrade_blocked_when_over_quota(client):
         client.post("/api/v1/conversations", headers=headers, json={})
     resp = client.post("/api/v1/user/upgrade", params={"plan": "free"}, headers=headers)
     assert resp.status_code == 400
+
+
+def create_auth(client):
+    uid = create_user(client)
+    token = client.post("/api/v1/auth/login", json={"email": "convuser@example.com", "password": "pwd"}).json()["data"]["access_token"]
+    return uid, {"Authorization": f"Bearer {token}"}
+
+
+def test_conversation_crud(client):
+    uid, headers = create_auth(client)
+    conv = client.post("/api/v1/conversations", headers=headers, json={"title": "A"}).json()["data"]
+    conv_id = conv["conversation_id"]
+    assert client.get(f"/api/v1/conversations/{conv_id}", headers=headers).status_code == 200
+    upd = client.patch(f"/api/v1/conversations/{conv_id}", headers=headers, json={"title": "B"})
+    assert upd.status_code == 200
+    assert upd.json()["data"]["title"] == "B"
+    assert client.delete(f"/api/v1/conversations/{conv_id}", headers=headers).status_code == 200
+    assert client.get(f"/api/v1/conversations/{conv_id}", headers=headers).status_code == 404
+
+
+def test_message_crud(client):
+    _, headers = create_auth(client)
+    conv = client.post("/api/v1/conversations", headers=headers, json={}).json()["data"]
+    msg = client.post(f"/api/v1/conversations/{conv['conversation_id']}/messages", headers=headers, json={"content": {"a": 1}, "message_type": "user"}).json()["data"]
+    mid = msg["message_id"]
+    assert client.get(f"/api/v1/messages/{mid}", headers=headers).status_code == 200
+    assert client.patch(f"/api/v1/messages/{mid}", headers=headers, json={"content": {"a": 2}}).status_code == 200
+    assert client.delete(f"/api/v1/messages/{mid}", headers=headers).status_code == 200
+    assert client.get(f"/api/v1/messages/{mid}", headers=headers).status_code == 404
+
+
+def test_search_and_bulk_delete(client):
+    _, headers = create_auth(client)
+    ids = []
+    for i in range(3):
+        resp = client.post("/api/v1/conversations", headers=headers, json={"title": f"Topic {i}"})
+        ids.append(resp.json()["data"]["conversation_id"])
+    resp = client.get("/api/v1/conversations", headers=headers, params={"q": "Topic 1"})
+    assert len(resp.json()["data"]) == 1
+    del_resp = client.delete("/api/v1/conversations", headers=headers, params=[("ids", i) for i in ids])
+    assert del_resp.status_code == 200
+    assert client.get("/api/v1/conversations", headers=headers).json()["data"] == []
+
+
+def test_file_upload_and_message(client, monkeypatch):
+    _, headers = create_auth(client)
+    conv = client.post("/api/v1/conversations", headers=headers, json={}).json()["data"]
+    import app.api.v1.endpoints.uploads as upload_ep
+    monkeypatch.setattr(upload_ep, "upload_file_obj", lambda f: "http://minio/test.txt")
+    import app.core.plans as plans
+    plans.PLANS["free"]["max_file_uploads"] = 1
+    upload = client.post("/api/v1/uploads", headers=headers, files={"file": ("t.txt", b"x", "text/plain")})
+    url = upload.json()["data"]["url"]
+    msg_resp = client.post(
+        f"/api/v1/conversations/{conv['conversation_id']}/messages",
+        headers=headers,
+        json={"content": {"url": url, "name": "t.txt"}, "message_type": "file"},
+    )
+    assert msg_resp.status_code == 200
+

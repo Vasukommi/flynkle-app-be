@@ -1,6 +1,6 @@
 from datetime import date
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List
 import logging
@@ -33,8 +33,9 @@ logger = logging.getLogger(__name__)
 def list_conversations(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
+    q: str | None = None,
 ) -> List[ConversationRead]:
-    convos = convo_repo.list_conversations(db, current_user.user_id)
+    convos = convo_repo.list_conversations(db, current_user.user_id, query=q)
     logger.info("Listing conversations for %s", current_user.user_id)
     payload = [ConversationRead.model_validate(c) for c in convos]
     return success(payload).dict()
@@ -105,6 +106,17 @@ def delete_conversation(
     return success(ConversationRead.model_validate(deleted)).dict()
 
 
+@router.delete("", response_model=StandardResponse, summary="Bulk delete conversations")
+def bulk_delete_conversations(
+    ids: List[UUID] = Query(...),
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    deleted = convo_repo.bulk_delete(db, current_user.user_id, ids)
+    logger.info("Bulk deleted %s conversations for %s", deleted, current_user.user_id)
+    return success({"deleted": deleted}).dict()
+
+
 @router.get(
     "/{conversation_id}/messages",
     response_model=StandardResponse,
@@ -171,11 +183,16 @@ def create_message(
 
     if msg_in.invoke_llm and msg_in.message_type == "user":
         check_chat_rate_limit(current_user.user_id)
+        tokens_used = daily.token_count or 0 if daily else 0
+        if tokens_used >= plan["daily_tokens"]:
+            raise HTTPException(status_code=403, detail="Upgrade required")
         try:
             content, tokens = chat_with_openai(str(msg_in.content))
         except Exception as exc:  # pragma: no cover - LLM failure
             logger.exception("LLM call failed")
         else:
+            if tokens_used + tokens > plan["daily_tokens"]:
+                raise HTTPException(status_code=403, detail="Upgrade required")
             ai_msg = message_repo.create_message(
                 db,
                 conversation_id,

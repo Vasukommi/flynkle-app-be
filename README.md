@@ -100,16 +100,18 @@ limited. The `/auth/logout` endpoint now invalidates the provided token and
 | GET | `/api/v1/plans` | List available plans |
 | GET | `/api/v1/user/usage` | Get usage for current user |
 | POST | `/api/v1/user/upgrade` | Change user plan |
-| GET | `/api/v1/conversations` | List user conversations |
+| GET | `/api/v1/conversations` | List user conversations (search with `q`) |
 | POST | `/api/v1/conversations` | Create conversation |
 | GET | `/api/v1/conversations/{conversation_id}` | Get conversation |
 | PATCH | `/api/v1/conversations/{conversation_id}` | Update conversation |
 | DELETE | `/api/v1/conversations/{conversation_id}` | Delete conversation |
+| DELETE | `/api/v1/conversations` | Bulk delete conversations |
 | GET | `/api/v1/conversations/{conversation_id}/messages` | List messages in conversation |
 | POST | `/api/v1/conversations/{conversation_id}/messages` | Create message in conversation |
 | GET | `/api/v1/messages/{message_id}` | Get message |
 | PATCH | `/api/v1/messages/{message_id}` | Update message |
 | DELETE | `/api/v1/messages/{message_id}` | Delete message |
+| POST | `/api/v1/uploads` | Upload file |
 | GET | `/api/v1/admin/users` | Admin list users |
 | PATCH | `/api/v1/admin/users/{user_id}` | Admin update user |
 
