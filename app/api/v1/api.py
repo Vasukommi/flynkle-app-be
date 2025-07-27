@@ -10,6 +10,7 @@ from app.api.v1.endpoints import (
     message_router,
     uploads,
     admin,
+    moderation,
 )
 
 api_router = APIRouter()
@@ -22,3 +23,4 @@ api_router.include_router(conversations.router)
 api_router.include_router(message_router)
 api_router.include_router(uploads.router)
 api_router.include_router(admin.router)
+api_router.include_router(moderation.router)
