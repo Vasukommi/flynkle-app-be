@@ -1,6 +1,7 @@
 """JWT-based authentication endpoints."""
 
 import logging
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
 
@@ -19,7 +20,11 @@ from app.core import settings
 from app.db.database import get_db
 from app.repositories import user as user_repo
 from app.schemas import LoginRequest, TokenResponse, UserUpdate
-from app.services import check_login_rate_limit
+from app.services import (
+    check_login_rate_limit,
+    generate_verification_token,
+    verify_email_token,
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 logger = logging.getLogger(__name__)
@@ -112,3 +117,36 @@ def reset_password(data: dict, db: Session = Depends(get_db)) -> dict:
     user_repo.update_user(db, user, UserUpdate(password=new_password))
     logger.info("Password reset for %s", email)
     return success({"detail": "password updated"}).dict()
+
+
+@router.post("/request-verify", response_model=StandardResponse, summary="Request email verification")
+def request_verification(data: dict, db: Session = Depends(get_db)) -> dict:
+    email = data.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="Email required")
+    user = user_repo.get_user_by_email(db, email)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    otp = generate_verification_token(email)
+    logger.info("Verification requested for %s", email)
+    return success({"otp": otp}).dict()
+
+
+@router.post("/verify-email", response_model=StandardResponse, summary="Verify email")
+def verify_email(data: dict, db: Session = Depends(get_db)) -> dict:
+    email = data.get("email")
+    otp = data.get("otp")
+    if not email or not otp:
+        raise HTTPException(status_code=400, detail="Invalid request")
+    user = user_repo.get_user_by_email(db, email)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not verify_email_token(email, otp):
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+    user_repo.update_user(
+        db,
+        user,
+        UserUpdate(is_verified=True, verified_at=datetime.utcnow()),
+    )
+    logger.info("Email verified for %s", email)
+    return success({"detail": "email verified"}).dict()

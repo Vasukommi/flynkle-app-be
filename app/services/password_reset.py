@@ -23,3 +23,13 @@ def verify_and_consume_otp(email: str, otp: str) -> bool:
         return False
     del _otp_store[email]
     return True
+
+
+def generate_verification_token(email: str) -> str:
+    """Generate an OTP for email verification."""
+    return generate_otp(f"verify:{email}")
+
+
+def verify_email_token(email: str, otp: str) -> bool:
+    """Validate and consume an email verification OTP."""
+    return verify_and_consume_otp(f"verify:{email}", otp)

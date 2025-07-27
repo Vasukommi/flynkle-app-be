@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from sqlalchemy import Column, String, Boolean, DateTime, JSON, func
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -28,6 +29,8 @@ class User(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     last_login = Column(DateTime, nullable=True)
+
+    deleted_at = Column(DateTime, nullable=True)
 
     profile = Column(JSON, server_default='{}')
 

@@ -92,6 +92,8 @@ limited. The `/auth/logout` endpoint now invalidates the provided token and
 | POST | `/api/v1/auth/refresh` | Refresh access token |
 | POST | `/api/v1/auth/request-reset` | Request password reset OTP |
 | POST | `/api/v1/auth/reset-password` | Reset password with OTP |
+| POST | `/api/v1/auth/request-verify` | Request email verification OTP |
+| POST | `/api/v1/auth/verify-email` | Verify user email |
 | GET | `/api/v1/users/me` | Get current user |
 | PATCH | `/api/v1/users/me` | Update current user |
 | DELETE | `/api/v1/users/me` | Delete current user |

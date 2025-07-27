@@ -92,3 +92,18 @@ def test_password_reset_flow(client):
     assert reset.status_code == 200
     login_resp = client.post("/api/v1/auth/login", json={"email": email, "password": "new"})
     assert login_resp.status_code == 200
+
+
+def test_email_verification_flow(client):
+    email = "verify@example.com"
+    create_user(client, email=email)
+    resp = client.post("/api/v1/auth/request-verify", json={"email": email})
+    otp = resp.json()["data"]["otp"]
+    verify = client.post("/api/v1/auth/verify-email", json={"email": email, "otp": otp})
+    assert verify.status_code == 200
+    login_resp = login(client, email=email)
+    token = login_resp.json()["data"]["access_token"]
+    user_id = decode_access_token(token)
+    headers = {"Authorization": f"Bearer {token}"}
+    user_data = client.get(f"/api/v1/users/{user_id}", headers=headers)
+    assert user_data.json()["data"]["is_verified"] is True
