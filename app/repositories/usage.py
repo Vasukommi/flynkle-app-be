@@ -22,3 +22,17 @@ def increment_message_count(db: Session, user_id: UUID, day: date) -> Usage:
     db.commit()
     db.refresh(usage)
     return usage
+
+
+def increment_token_count(db: Session, user_id: UUID, day: date, tokens: int) -> Usage:
+    """Add used tokens to the daily usage counter."""
+    usage = get_daily_usage(db, user_id, day)
+    if not usage:
+        usage = Usage(user_id=user_id, date=day, message_count=0, token_count=0)
+        db.add(usage)
+    if usage.token_count is None:
+        usage.token_count = 0
+    usage.token_count += tokens
+    db.commit()
+    db.refresh(usage)
+    return usage

@@ -12,6 +12,8 @@ from sqlalchemy.orm import sessionmaker
 
 from app.main import app
 from app.db.database import Base, get_db
+from app.repositories import user as user_repo
+from app.schemas.user import UserCreate
 
 @pytest.fixture
 def client():
@@ -41,6 +43,12 @@ def create_token(client):
         json={"email": "conv@example.com", "password": "pwd"},
     )
     return resp.json()["data"]["access_token"]
+
+
+def create_user(client):
+    data = {"provider": "email", "email": "convuser@example.com", "password": "pwd"}
+    resp = client.post("/api/v1/users", json=data)
+    return resp.json()["data"]["user_id"]
 
 
 def test_plan_enforcement(client):
