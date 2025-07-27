@@ -8,7 +8,7 @@ class MessageBase(BaseModel):
     message_type: str
 
 class MessageCreate(MessageBase):
-    pass
+    invoke_llm: bool = False
 
 class MessageUpdate(BaseModel):
     content: Optional[dict] = None

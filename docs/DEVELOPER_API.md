@@ -99,6 +99,7 @@ The current service exposes a minimal set of endpoints:
 | GET    | `/api/v1/conversations/{conversation_id}/messages` | List messages in conversation |
 | POST   | `/api/v1/conversations/{conversation_id}/messages` | Create message in conversation |
 | GET    | `/api/v1/messages/{message_id}` | Get message |
+| PATCH  | `/api/v1/messages/{message_id}` | Update message |
 | DELETE | `/api/v1/messages/{message_id}` | Delete message |
 | GET    | `/api/v1/admin/users` | Admin list users |
 | PATCH  | `/api/v1/admin/users/{user_id}` | Admin update user |
@@ -111,3 +112,4 @@ The current service exposes a minimal set of endpoints:
 This table matches the one in the main `README.md` and should be updated whenever routes change.
 
 These tables enable conversation history and quota tracking which can be used to enforce subscription plans.
+Each plan defines the maximum number of conversations a user may keep and how many messages they can send per day. Message endpoints store data in the tables while `/chat` sends a single prompt without persisting any messages.

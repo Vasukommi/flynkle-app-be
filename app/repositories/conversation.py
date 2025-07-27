@@ -20,6 +20,11 @@ def list_conversations(db: Session, user_id: UUID) -> List[Conversation]:
     return db.query(Conversation).filter(Conversation.user_id == user_id).order_by(Conversation.created_at.desc()).all()
 
 
+def count_conversations(db: Session, user_id: UUID) -> int:
+    """Return number of conversations owned by the user."""
+    return db.query(Conversation).filter(Conversation.user_id == user_id).count()
+
+
 def update_conversation(db: Session, conv: Conversation, title: Optional[str] = None, status: Optional[str] = None) -> Conversation:
     if title is not None:
         conv.title = title

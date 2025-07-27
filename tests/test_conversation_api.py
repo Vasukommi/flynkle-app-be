@@ -90,3 +90,14 @@ def test_update_message(client):
     data = updated.json()["data"]
     assert data["content"] == {"t": 2}
     assert data["extra"] == {"edited": True}
+
+
+def test_conversation_limit(client):
+    token = create_token(client)
+    headers = {"Authorization": f"Bearer {token}"}
+    for _ in range(3):
+        resp = client.post("/api/v1/conversations", headers=headers, json={})
+        assert resp.status_code == 200
+    resp = client.post("/api/v1/conversations", headers=headers, json={})
+    assert resp.status_code == 403
+    assert resp.json()["message"] == "Upgrade required"
