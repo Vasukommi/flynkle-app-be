@@ -7,6 +7,7 @@ from sqlalchemy import or_
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate
 from app.core.security import hash_password
+from datetime import datetime
 
 
 def create_user(db: Session, user_in: UserCreate) -> User:
@@ -38,6 +39,13 @@ def update_user(db: Session, user: User, user_in: UserUpdate) -> User:
     db.commit()
     db.refresh(user)
     return user
+
+
+def update_last_login(db: Session, user: User) -> None:
+    """Record the user's last login timestamp."""
+    user.last_login = datetime.utcnow()
+    db.commit()
+    db.refresh(user)
 
 
 def delete_user(db: Session, user: User) -> User:

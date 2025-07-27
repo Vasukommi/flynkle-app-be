@@ -11,6 +11,7 @@ RATE_LIMIT_COUNT = 5
 
 _chat_log: dict[UUID, deque[float]] = defaultdict(deque)
 _login_log: dict[str, deque[float]] = defaultdict(deque)
+_message_log: dict[UUID, deque[float]] = defaultdict(deque)
 
 
 def _prune(q: deque[float]) -> None:
@@ -34,4 +35,13 @@ def check_login_rate_limit(identifier: str) -> None:
     _prune(q)
     if len(q) >= RATE_LIMIT_COUNT:
         raise HTTPException(status_code=429, detail="Too many login attempts")
+    q.append(time.time())
+
+
+def check_message_rate_limit(user_id: UUID) -> None:
+    """Limit how many messages a user can create per time window."""
+    q = _message_log[user_id]
+    _prune(q)
+    if len(q) >= RATE_LIMIT_COUNT:
+        raise HTTPException(status_code=429, detail="Too many messages")
     q.append(time.time())

@@ -55,13 +55,19 @@ def test_plan_enforcement(client):
     token = create_token(client)
     headers = {"Authorization": f"Bearer {token}"}
     conv = client.post("/api/v1/conversations", headers=headers, json={}).json()["data"]
-    for i in range(20):
-        resp = client.post(
-            f"/api/v1/conversations/{conv['conversation_id']}/messages",
-            headers=headers,
-            json={"content": {"t": i}, "message_type": "user"},
-        )
-        assert resp.status_code == 200
+    import app.api.v1.endpoints.conversations as conv_ep
+    original = conv_ep.check_message_rate_limit
+    conv_ep.check_message_rate_limit = lambda _u: None
+    try:
+        for i in range(20):
+            resp = client.post(
+                f"/api/v1/conversations/{conv['conversation_id']}/messages",
+                headers=headers,
+                json={"content": {"t": i}, "message_type": "user"},
+            )
+            assert resp.status_code == 200
+    finally:
+        conv_ep.check_message_rate_limit = original
     # 21st message should fail
     resp = client.post(
         f"/api/v1/conversations/{conv['conversation_id']}/messages",
