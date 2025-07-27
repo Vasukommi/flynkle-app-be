@@ -133,3 +133,18 @@ def admin_reinstate_user(user_id: UUID, db: Session = Depends(get_db)) -> UserRe
     reinstated = user_repo.reinstate_user(db, user)
     logger.info("Admin reinstated user %s", user_id)
     return success(UserRead.model_validate(reinstated)).dict()
+
+
+@router.post(
+    "/users/{user_id}/restore",
+    response_model=StandardResponse,
+    summary="Restore user",
+)
+def admin_restore_user(user_id: UUID, db: Session = Depends(get_db)) -> UserRead:
+    """Restore a soft-deleted user."""
+    user = user_repo.get_user_include_deleted(db, user_id)
+    if not user or user.deleted_at is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    restored = user_repo.restore_user(db, user)
+    logger.info("Admin restored user %s", user_id)
+    return success(UserRead.model_validate(restored)).dict()

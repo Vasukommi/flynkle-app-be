@@ -13,7 +13,6 @@ services:
       - postgres
       - redis
       - minio
-      - qdrant
   postgres:
     image: postgres:15
     restart: always
@@ -38,8 +37,3 @@ services:
     ports:
       - "9000:9000"
       - "9001:9001"
-  qdrant:
-    image: qdrant/qdrant:latest
-    restart: always
-    ports:
-      - "6333:6333"

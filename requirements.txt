@@ -2,7 +2,6 @@ fastapi
 uvicorn
 redis
 minio
-qdrant-client
 SQLAlchemy
 psycopg2-binary
 alembic

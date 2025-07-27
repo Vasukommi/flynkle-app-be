@@ -98,15 +98,29 @@ The current service exposes a minimal set of endpoints:
 | GET    | `/api/v1/conversations/{conversation_id}` | Get conversation |
 | PATCH  | `/api/v1/conversations/{conversation_id}` | Update conversation |
 | DELETE | `/api/v1/conversations/{conversation_id}` | Delete conversation |
+| DELETE | `/api/v1/conversations` | Bulk delete conversations |
+| GET    | `/api/v1/conversations/export` | Export conversation summaries |
 | GET    | `/api/v1/conversations/{conversation_id}/messages` | List messages in conversation |
 | POST   | `/api/v1/conversations/{conversation_id}/messages` | Create message in conversation |
 | GET    | `/api/v1/messages/{message_id}` | Get message |
 | PATCH  | `/api/v1/messages/{message_id}` | Update message |
 | DELETE | `/api/v1/messages/{message_id}` | Delete message |
+| GET    | `/api/v1/messages/search` | Search messages |
+| POST   | `/api/v1/uploads` | Upload file |
+| GET    | `/api/v1/uploads` | List user uploads |
+| DELETE | `/api/v1/uploads/{upload_id}` | Delete uploaded file |
 | GET    | `/api/v1/admin/users` | Admin list users |
 | POST   | `/api/v1/admin/users` | Admin create user |
 | PATCH  | `/api/v1/admin/users/{user_id}` | Admin update user |
 | DELETE | `/api/v1/admin/users/{user_id}` | Admin delete user |
+| GET    | `/api/v1/admin/users/{user_id}/conversations` | Admin view user's conversations |
+| GET    | `/api/v1/admin/users/{user_id}/usage` | Admin view user's usage |
+| POST   | `/api/v1/admin/users/{user_id}/suspend` | Suspend user |
+| POST   | `/api/v1/admin/users/{user_id}/reinstate` | Reinstate user |
+| POST   | `/api/v1/admin/users/{user_id}/restore` | Restore deleted user |
+| POST   | `/api/v1/moderation/stage-in` | Stage incoming message |
+| POST   | `/api/v1/moderation/stage-out` | Stage outgoing message |
+| GET    | `/api/v1/moderation` | List staged messages |
 
 ### User actions
 
