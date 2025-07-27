@@ -2,11 +2,24 @@ from datetime import datetime, timedelta
 from uuid import UUID
 
 import jwt
+from typing import Set
 from passlib.context import CryptContext
 
 from app.core.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+_revoked_tokens: Set[str] = set()
+
+
+def revoke_token(token: str) -> None:
+    """Mark a token as revoked."""
+    _revoked_tokens.add(token)
+
+
+def is_token_revoked(token: str) -> bool:
+    """Check whether the given token has been revoked."""
+    return token in _revoked_tokens
 
 def hash_password(password: str) -> str:
     """Hash a plain text password."""
@@ -28,5 +41,7 @@ def create_access_token(user_id: UUID) -> str:
 
 def decode_access_token(token: str) -> UUID:
     """Decode a JWT and return the user id."""
+    if is_token_revoked(token):
+        raise jwt.InvalidTokenError("Token revoked")
     data = jwt.decode(token, settings.secret_key, algorithms=[settings.jwt_algorithm])
     return UUID(data["sub"])

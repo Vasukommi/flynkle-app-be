@@ -1,5 +1,6 @@
 """JWT-based authentication endpoints."""
 
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
 
@@ -9,20 +10,29 @@ from app.core import (
     verify_password,
     create_access_token,
     decode_access_token,
+    revoke_token,
 )
 from app.db.database import get_db
 from app.repositories import user as user_repo
 from app.schemas import LoginRequest, TokenResponse
+from app.services import check_login_rate_limit
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+logger = logging.getLogger(__name__)
 
 
 @router.post("/login", response_model=StandardResponse, summary="Login")
 def login(credentials: LoginRequest, db: Session = Depends(get_db)) -> dict:
+    check_login_rate_limit(credentials.email)
     user = user_repo.get_user_by_email(db, credentials.email)
     if not user or not verify_password(credentials.password, user.password):
+        logger.warning("Failed login for %s", credentials.email)
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    if not user.is_active or user.is_suspended:
+        logger.warning("Inactive/suspended login attempt for %s", credentials.email)
+        raise HTTPException(status_code=403, detail="Account disabled")
     token = create_access_token(user.user_id)
+    logger.info("User %s logged in", user.user_id)
     return success(TokenResponse(access_token=token)).dict()
 
 
@@ -33,6 +43,8 @@ def logout(authorization: str = Header(..., alias="Authorization")) -> dict:
         decode_access_token(token)
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid token")
+    revoke_token(token)
+    logger.info("Token revoked")
     return success({"detail": "logout successful"}).dict()
 
 
@@ -43,4 +55,5 @@ def verify(authorization: str = Header(..., alias="Authorization")) -> dict:
         user_id = decode_access_token(token)
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid token")
+    logger.debug("Token for %s verified", user_id)
     return success({"user_id": str(user_id)}).dict()

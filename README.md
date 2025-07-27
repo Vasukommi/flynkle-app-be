@@ -64,8 +64,10 @@ Errors use the same structure with an appropriate status code and message.
 ### Authentication
 
 Login returns a JWT access token. Pass it in the `Authorization` header as
-`Bearer <token>` when calling protected endpoints. Use `/auth/logout` and
-`/auth/verify` with the same header to logout or validate a token.
+`Bearer <token>` when calling protected endpoints. Accounts must be active and
+not suspended in order to authenticate. Excessive login attempts are rate
+limited. The `/auth/logout` endpoint now invalidates the provided token and
+`/auth/verify` checks that it is still valid.
 
 
 ## Endpoints
@@ -78,6 +80,7 @@ Login returns a JWT access token. Pass it in the `Authorization` header as
 | POST | `/api/v1/users` | Create a new user |
 | GET | `/api/v1/users/{user_id}` | Retrieve a user by ID |
 | PUT | `/api/v1/users/{user_id}` | Update a user |
+| PATCH | `/api/v1/users/{user_id}` | Partially update a user |
 | DELETE | `/api/v1/users/{user_id}` | Delete a user |
 | GET | `/` | Returns a welcome message (not in the OpenAPI schema) |
 | POST | `/api/v1/auth/login` | Login and receive a token |
@@ -101,6 +104,11 @@ Login returns a JWT access token. Pass it in the `Authorization` header as
 | DELETE | `/api/v1/messages/{message_id}` | Delete message |
 | GET | `/api/v1/admin/users` | Admin list users |
 | PATCH | `/api/v1/admin/users/{user_id}` | Admin update user |
+
+### User actions
+
+`PATCH` and `DELETE` on user resources require a valid token in the
+`Authorization` header (or `X-User-ID` for internal calls).
 
 ### Admin access
 
