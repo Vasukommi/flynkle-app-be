@@ -1,15 +1,19 @@
+"""Authentication placeholder endpoints."""
+
 from fastapi import APIRouter
+
+from app.core import success, StandardResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-@router.post("/login", summary="Login placeholder")
+@router.post("/login", response_model=StandardResponse, summary="Login placeholder")
 def login() -> dict:
-    return {"detail": "login successful"}
+    return success({"detail": "login successful"}).dict()
 
-@router.post("/logout", summary="Logout placeholder")
+@router.post("/logout", response_model=StandardResponse, summary="Logout placeholder")
 def logout() -> dict:
-    return {"detail": "logout successful"}
+    return success({"detail": "logout successful"}).dict()
 
-@router.post("/verify", summary="Verification placeholder")
+@router.post("/verify", response_model=StandardResponse, summary="Verification placeholder")
 def verify() -> dict:
-    return {"detail": "verification successful"}
+    return success({"detail": "verification successful"}).dict()

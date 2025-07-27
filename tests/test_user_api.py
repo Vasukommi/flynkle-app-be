@@ -1,6 +1,9 @@
 import os
+import sys
 
 os.environ.setdefault("OPENAI_API_KEY", "test")
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import pytest
 from fastapi.testclient import TestClient
@@ -37,11 +40,11 @@ def test_create_duplicate_user(client):
     assert resp1.status_code == 200
     resp2 = client.post("/api/v1/users", json=data)
     assert resp2.status_code == 400
-    assert resp2.json() == {"detail": "User already exists"}
+    assert resp2.json()["message"] == "User already exists"
 
 
 def test_user_has_default_plan(client):
     data = {"provider": "email", "email": "plan@example.com", "password": "pwd"}
     resp = client.post("/api/v1/users", json=data)
     assert resp.status_code == 200
-    assert resp.json()["plan"] == "free"
+    assert resp.json()["data"]["plan"] == "free"

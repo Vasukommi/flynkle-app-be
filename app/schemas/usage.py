@@ -1,7 +1,7 @@
 from datetime import date
 from uuid import UUID
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class UsageRead(BaseModel):
     usage_id: UUID
@@ -11,5 +11,4 @@ class UsageRead(BaseModel):
     token_count: Optional[int] = None
     file_uploads: Optional[int] = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
