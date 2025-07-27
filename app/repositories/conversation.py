@@ -16,8 +16,11 @@ def get_conversation(db: Session, conversation_id: UUID) -> Optional[Conversatio
     return db.query(Conversation).filter(Conversation.conversation_id == conversation_id).first()
 
 
-def list_conversations(db: Session, user_id: UUID) -> List[Conversation]:
-    return db.query(Conversation).filter(Conversation.user_id == user_id).order_by(Conversation.created_at.desc()).all()
+def list_conversations(db: Session, user_id: UUID, query: Optional[str] = None) -> List[Conversation]:
+    q = db.query(Conversation).filter(Conversation.user_id == user_id)
+    if query:
+        q = q.filter(Conversation.title.ilike(f"%{query}%"))
+    return q.order_by(Conversation.created_at.desc()).all()
 
 
 def count_conversations(db: Session, user_id: UUID) -> int:
@@ -39,3 +42,10 @@ def delete_conversation(db: Session, conv: Conversation) -> Conversation:
     db.delete(conv)
     db.commit()
     return conv
+
+
+def bulk_delete(db: Session, user_id: UUID, ids: List[UUID]) -> int:
+    q = db.query(Conversation).filter(Conversation.user_id == user_id, Conversation.conversation_id.in_(ids))
+    count = q.delete(synchronize_session=False)
+    db.commit()
+    return count
