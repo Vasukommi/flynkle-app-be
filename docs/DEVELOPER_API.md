@@ -47,6 +47,20 @@ This document summarizes the planned API endpoints and database tables for the p
 - `file_uploads` **INT** optional upload count
 - `last_updated_at` **TIMESTAMP** updated when counts change
 
+## Response Format
+
+All endpoints return:
+
+```json
+{
+  "code": 200,
+  "message": "Success",
+  "data": {}
+}
+```
+
+Errors follow the same structure with an appropriate status code.
+
 ## API Endpoints
 
 The current service exposes a minimal set of endpoints:

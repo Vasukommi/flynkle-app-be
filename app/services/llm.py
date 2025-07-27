@@ -1,19 +1,30 @@
+"""Service wrappers for the language model provider."""
+
 import logging
-import os
 from typing import Any
+
 from openai import OpenAI, OpenAIError
 
-openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+from app.core import settings
+
+openai_client = OpenAI(api_key=settings.openai_api_key)
 logger = logging.getLogger(__name__)
 
 
 def chat_with_openai(message: str) -> str:
     """Send a prompt to OpenAI GPT-4 and return the response."""
+
     try:
         response: Any = openai_client.chat.completions.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "You are Flynkle, a witty, deeply personal AI assistant who speaks like a friend and doesn't say 'As an AI...'"},
+                {
+                    "role": "system",
+                    "content": (
+                        "You are Flynkle, a witty, deeply personal AI assistant who speaks "
+                        "like a friend and doesn't say 'As an AI...'"
+                    ),
+                },
                 {"role": "user", "content": message},
             ],
         )

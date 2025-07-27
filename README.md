@@ -46,6 +46,20 @@ Apply migrations with:
 alembic upgrade head
 ```
 
+### Response Format
+
+Every endpoint wraps its payload in a simple envelope:
+
+```json
+{
+  "code": 200,
+  "message": "Success",
+  "data": {}
+}
+```
+
+Errors use the same structure with an appropriate status code and message.
+
 
 ## Endpoints
 

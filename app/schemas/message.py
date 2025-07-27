@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class MessageBase(BaseModel):
     content: dict
@@ -17,5 +17,4 @@ class MessageRead(MessageBase):
     timestamp: Optional[datetime] = None
     extra: Optional[dict] = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

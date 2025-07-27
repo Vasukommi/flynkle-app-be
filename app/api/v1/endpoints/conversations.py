@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.api.deps import get_current_user
+from app.core import success
 from app.db.database import get_db
 from app.repositories import conversation as convo_repo
 from app.repositories import message as message_repo
@@ -17,28 +18,32 @@ from app.schemas import (
     MessageCreate,
     MessageRead,
 )
+from app.core import success, StandardResponse
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
 
 
-@router.get("", response_model=List[ConversationRead], summary="List conversations")
+@router.get("", response_model=StandardResponse, summary="List conversations")
 def list_conversations(
     current_user = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> List[ConversationRead]:
-    return convo_repo.list_conversations(db, current_user.user_id)
+    convos = convo_repo.list_conversations(db, current_user.user_id)
+    payload = [ConversationRead.model_validate(c) for c in convos]
+    return success(payload).dict()
 
 
-@router.post("", response_model=ConversationRead, summary="Create conversation")
+@router.post("", response_model=StandardResponse, summary="Create conversation")
 def create_conversation(
     convo_in: ConversationCreate,
     current_user = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ConversationRead:
-    return convo_repo.create_conversation(db, current_user.user_id, convo_in.title)
+    conv = convo_repo.create_conversation(db, current_user.user_id, convo_in.title)
+    return success(ConversationRead.model_validate(conv)).dict()
 
 
-@router.get("/{conversation_id}", response_model=ConversationRead, summary="Get conversation")
+@router.get("/{conversation_id}", response_model=StandardResponse, summary="Get conversation")
 def get_conversation(
     conversation_id: UUID,
     current_user = Depends(get_current_user),
@@ -47,10 +52,10 @@ def get_conversation(
     convo = convo_repo.get_conversation(db, conversation_id)
     if not convo or convo.user_id != current_user.user_id:
         raise HTTPException(status_code=404, detail="Conversation not found")
-    return convo
+    return success(ConversationRead.model_validate(convo)).dict()
 
 
-@router.patch("/{conversation_id}", response_model=ConversationRead, summary="Update conversation")
+@router.patch("/{conversation_id}", response_model=StandardResponse, summary="Update conversation")
 def update_conversation(
     conversation_id: UUID,
     convo_in: ConversationUpdate,
@@ -60,10 +65,11 @@ def update_conversation(
     convo = convo_repo.get_conversation(db, conversation_id)
     if not convo or convo.user_id != current_user.user_id:
         raise HTTPException(status_code=404, detail="Conversation not found")
-    return convo_repo.update_conversation(db, convo, convo_in.title, convo_in.status)
+    updated = convo_repo.update_conversation(db, convo, convo_in.title, convo_in.status)
+    return success(ConversationRead.model_validate(updated)).dict()
 
 
-@router.delete("/{conversation_id}", response_model=ConversationRead, summary="Delete conversation")
+@router.delete("/{conversation_id}", response_model=StandardResponse, summary="Delete conversation")
 def delete_conversation(
     conversation_id: UUID,
     current_user = Depends(get_current_user),
@@ -72,10 +78,11 @@ def delete_conversation(
     convo = convo_repo.get_conversation(db, conversation_id)
     if not convo or convo.user_id != current_user.user_id:
         raise HTTPException(status_code=404, detail="Conversation not found")
-    return convo_repo.delete_conversation(db, convo)
+    deleted = convo_repo.delete_conversation(db, convo)
+    return success(ConversationRead.model_validate(deleted)).dict()
 
 
-@router.get("/{conversation_id}/messages", response_model=List[MessageRead], summary="List messages")
+@router.get("/{conversation_id}/messages", response_model=StandardResponse, summary="List messages")
 def list_messages(
     conversation_id: UUID,
     current_user = Depends(get_current_user),
@@ -86,10 +93,12 @@ def list_messages(
     convo = convo_repo.get_conversation(db, conversation_id)
     if not convo or convo.user_id != current_user.user_id:
         raise HTTPException(status_code=404, detail="Conversation not found")
-    return message_repo.list_messages(db, conversation_id, skip=skip, limit=limit)
+    msgs = message_repo.list_messages(db, conversation_id, skip=skip, limit=limit)
+    payload = [MessageRead.model_validate(m) for m in msgs]
+    return success(payload).dict()
 
 
-@router.post("/{conversation_id}/messages", response_model=MessageRead, summary="Create message")
+@router.post("/{conversation_id}/messages", response_model=StandardResponse, summary="Create message")
 def create_message(
     conversation_id: UUID,
     msg_in: MessageCreate,
@@ -112,10 +121,10 @@ def create_message(
         msg_in.message_type,
     )
     usage_repo.increment_message_count(db, current_user.user_id, date.today())
-    return msg
+    return success(MessageRead.model_validate(msg)).dict()
 
 
-@router.get("/messages/{message_id}", response_model=MessageRead, summary="Get message")
+@router.get("/messages/{message_id}", response_model=StandardResponse, summary="Get message")
 def get_message(
     message_id: UUID,
     current_user = Depends(get_current_user),
@@ -127,10 +136,10 @@ def get_message(
     convo = convo_repo.get_conversation(db, msg.conversation_id)
     if not convo or convo.user_id != current_user.user_id:
         raise HTTPException(status_code=404, detail="Message not found")
-    return msg
+    return success(MessageRead.model_validate(msg)).dict()
 
 
-@router.delete("/messages/{message_id}", response_model=MessageRead, summary="Delete message")
+@router.delete("/messages/{message_id}", response_model=StandardResponse, summary="Delete message")
 def delete_message(
     message_id: UUID,
     current_user = Depends(get_current_user),
@@ -142,4 +151,5 @@ def delete_message(
     convo = convo_repo.get_conversation(db, msg.conversation_id)
     if not convo or convo.user_id != current_user.user_id:
         raise HTTPException(status_code=404, detail="Message not found")
-    return message_repo.delete_message(db, msg)
+    deleted = message_repo.delete_message(db, msg)
+    return success(MessageRead.model_validate(deleted)).dict()

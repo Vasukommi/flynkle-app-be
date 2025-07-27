@@ -1,0 +1,60 @@
+import os
+import sys
+
+os.environ.setdefault("OPENAI_API_KEY", "test")
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from app.main import app
+from app.db.database import Base, get_db
+
+@pytest.fixture
+def client():
+    engine = create_engine("sqlite:///./test_conv.db", connect_args={"check_same_thread": False})
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    Base.metadata.create_all(bind=engine)
+
+    def override_get_db():
+        db = TestingSessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+    with TestClient(app) as c:
+        yield c
+    app.dependency_overrides.clear()
+    os.remove("test_conv.db")
+
+
+def create_user(client):
+    data = {"provider": "email", "email": "conv@example.com", "password": "pwd"}
+    resp = client.post("/api/v1/users", json=data)
+    return resp.json()["data"]["user_id"]
+
+
+def test_plan_enforcement(client):
+    user_id = create_user(client)
+    headers = {"X-User-ID": user_id}
+    conv = client.post("/api/v1/conversations", headers=headers, json={}).json()["data"]
+    for i in range(20):
+        resp = client.post(
+            f"/api/v1/conversations/{conv['conversation_id']}/messages",
+            headers=headers,
+            json={"content": {"t": i}, "message_type": "user"},
+        )
+        assert resp.status_code == 200
+    # 21st message should fail
+    resp = client.post(
+        f"/api/v1/conversations/{conv['conversation_id']}/messages",
+        headers=headers,
+        json={"content": {"t": 21}, "message_type": "user"},
+    )
+    assert resp.status_code == 403
+    assert resp.json()["message"] == "Upgrade required"
