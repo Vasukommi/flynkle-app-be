@@ -112,6 +112,8 @@ limited. The `/auth/logout` endpoint now invalidates the provided token and
 | PATCH | `/api/v1/messages/{message_id}` | Update message |
 | DELETE | `/api/v1/messages/{message_id}` | Delete message |
 | POST | `/api/v1/uploads` | Upload file |
+| GET | `/api/v1/uploads` | List user uploads |
+| DELETE | `/api/v1/uploads/{upload_id}` | Delete uploaded file |
 | GET | `/api/v1/admin/users` | Admin list users |
 | POST | `/api/v1/admin/users` | Admin create user |
 | PATCH | `/api/v1/admin/users/{user_id}` | Admin update user |

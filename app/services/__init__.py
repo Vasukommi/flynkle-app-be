@@ -14,7 +14,7 @@ from .password_reset import (
     verify_email_token,
 )
 from .billing import charge_plan
-from .storage import upload_file_obj
+from .storage import upload_file_obj, get_file_url, delete_file
 
 __all__ = [
     "chat_with_openai",
@@ -30,4 +30,6 @@ __all__ = [
     "verify_email_token",
     "charge_plan",
     "upload_file_obj",
+    "get_file_url",
+    "delete_file",
 ]
