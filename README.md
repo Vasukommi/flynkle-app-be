@@ -45,8 +45,6 @@ Apply migrations with:
 alembic upgrade head
 ```
 
-When you start the stack with Docker Compose the API container will
-automatically apply migrations before launching Uvicorn.
 
 ## Endpoints
 
