@@ -33,15 +33,19 @@ def client():
     os.remove("test_conv.db")
 
 
-def create_user(client):
+def create_token(client):
     data = {"provider": "email", "email": "conv@example.com", "password": "pwd"}
-    resp = client.post("/api/v1/users", json=data)
-    return resp.json()["data"]["user_id"]
+    client.post("/api/v1/users", json=data)
+    resp = client.post(
+        "/api/v1/auth/login",
+        json={"email": "conv@example.com", "password": "pwd"},
+    )
+    return resp.json()["data"]["access_token"]
 
 
 def test_plan_enforcement(client):
-    user_id = create_user(client)
-    headers = {"X-User-ID": user_id}
+    token = create_token(client)
+    headers = {"Authorization": f"Bearer {token}"}
     conv = client.post("/api/v1/conversations", headers=headers, json={}).json()["data"]
     for i in range(20):
         resp = client.post(

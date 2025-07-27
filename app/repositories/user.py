@@ -23,6 +23,11 @@ def get_user(db: Session, user_id: UUID) -> Optional[User]:
     return db.query(User).filter(User.user_id == user_id).first()
 
 
+def get_user_by_email(db: Session, email: str) -> Optional[User]:
+    """Retrieve a user by email."""
+    return db.query(User).filter(User.email == email).first()
+
+
 def update_user(db: Session, user: User, user_in: UserUpdate) -> User:
     update_data = user_in.dict(exclude_unset=True)
     password = update_data.pop("password", None)
