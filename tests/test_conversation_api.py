@@ -229,7 +229,8 @@ def test_file_upload_and_message(client, monkeypatch):
     conv = client.post("/api/v1/conversations", headers=headers, json={}).json()["data"]
     import app.api.v1.endpoints.uploads as upload_ep
 
-    monkeypatch.setattr(upload_ep, "upload_file_obj", lambda f: "http://minio/test.txt")
+    monkeypatch.setattr(upload_ep, "upload_file_obj", lambda f: ("test.txt", 1))
+    monkeypatch.setattr(upload_ep, "get_file_url", lambda k: f"http://minio/{k}")
     import app.core.plans as plans
 
     plans.PLANS["free"]["max_file_uploads"] = 1

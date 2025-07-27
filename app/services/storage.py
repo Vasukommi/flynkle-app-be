@@ -11,13 +11,31 @@ client = Minio(
 )
 
 
-def upload_file_obj(file_obj) -> str:
-    """Upload a file and return its public URL."""
+def upload_file_obj(file_obj) -> tuple[str, int]:
+    """Upload a file and return its key and size."""
     bucket = settings.minio_bucket
     if not client.bucket_exists(bucket):
         client.make_bucket(bucket)
     data = file_obj.file.read()
+    size = len(data)
     key = f"{uuid4()}-{file_obj.filename}"
-    client.put_object(bucket, key, io.BytesIO(data), length=len(data), content_type=file_obj.content_type)
-    return f"http://{settings.minio_endpoint}/{bucket}/{key}"
+    client.put_object(
+        bucket,
+        key,
+        io.BytesIO(data),
+        length=size,
+        content_type=file_obj.content_type,
+    )
+    return key, size
+
+
+def get_file_url(key: str, expires: int = 3600) -> str:
+    """Return a presigned URL for accessing the file."""
+    bucket = settings.minio_bucket
+    return client.presigned_get_object(bucket, key, expires=expires)
+
+
+def delete_file(key: str) -> None:
+    bucket = settings.minio_bucket
+    client.remove_object(bucket, key)
 

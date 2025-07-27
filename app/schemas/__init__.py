@@ -3,6 +3,7 @@ from .user import UserCreate, UserRead, UserUpdate
 from .conversation import ConversationCreate, ConversationRead, ConversationUpdate
 from .message import MessageCreate, MessageRead, MessageUpdate
 from .usage import UsageRead
+from .upload import UploadRead
 from pydantic import BaseModel
 
 
@@ -28,6 +29,7 @@ __all__ = [
     "MessageRead",
     "MessageUpdate",
     "UsageRead",
+    "UploadRead",
     "LoginRequest",
     "TokenResponse",
 ]
