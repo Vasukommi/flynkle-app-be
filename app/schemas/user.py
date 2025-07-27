@@ -13,6 +13,7 @@ class UserBase(BaseModel):
     profile: Optional[dict] = None
     is_active: Optional[bool] = True
     is_admin: Optional[bool] = False
+    plan: Optional[str] = "free"
 
 
 class UserCreate(UserBase):
