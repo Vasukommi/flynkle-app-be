@@ -15,12 +15,14 @@ from app.schemas import (
     ConversationCreate,
     ConversationRead,
     ConversationUpdate,
+    MessageUpdate,
     MessageCreate,
     MessageRead,
 )
 from app.core import success, StandardResponse
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
+message_router = APIRouter(prefix="/messages", tags=["conversations"])
 
 
 @router.get("", response_model=StandardResponse, summary="List conversations")
@@ -124,7 +126,7 @@ def create_message(
     return success(MessageRead.model_validate(msg)).dict()
 
 
-@router.get("/messages/{message_id}", response_model=StandardResponse, summary="Get message")
+@message_router.get("/{message_id}", response_model=StandardResponse, summary="Get message")
 def get_message(
     message_id: UUID,
     current_user = Depends(get_current_user),
@@ -139,7 +141,30 @@ def get_message(
     return success(MessageRead.model_validate(msg)).dict()
 
 
-@router.delete("/messages/{message_id}", response_model=StandardResponse, summary="Delete message")
+@message_router.patch("/{message_id}", response_model=StandardResponse, summary="Update message")
+def update_message(
+    message_id: UUID,
+    msg_in: MessageUpdate,
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> MessageRead:
+    msg = message_repo.get_message(db, message_id)
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    convo = convo_repo.get_conversation(db, msg.conversation_id)
+    if not convo or convo.user_id != current_user.user_id:
+        raise HTTPException(status_code=404, detail="Message not found")
+    updated = message_repo.update_message(
+        db,
+        msg,
+        content=msg_in.content,
+        message_type=msg_in.message_type,
+        extra=msg_in.extra,
+    )
+    return success(MessageRead.model_validate(updated)).dict()
+
+
+@message_router.delete("/{message_id}", response_model=StandardResponse, summary="Delete message")
 def delete_message(
     message_id: UUID,
     current_user = Depends(get_current_user),

@@ -27,6 +27,24 @@ def list_messages(db: Session, conversation_id: UUID, skip: int = 0, limit: int 
     )
 
 
+def update_message(
+    db: Session,
+    msg: Message,
+    content: Optional[dict] = None,
+    message_type: Optional[str] = None,
+    extra: Optional[dict] = None,
+) -> Message:
+    if content is not None:
+        msg.content = content
+    if message_type is not None:
+        msg.message_type = message_type
+    if extra is not None:
+        msg.extra = extra
+    db.commit()
+    db.refresh(msg)
+    return msg
+
+
 def delete_message(db: Session, msg: Message) -> Message:
     db.delete(msg)
     db.commit()

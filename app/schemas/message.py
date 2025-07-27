@@ -10,6 +10,11 @@ class MessageBase(BaseModel):
 class MessageCreate(MessageBase):
     pass
 
+class MessageUpdate(BaseModel):
+    content: Optional[dict] = None
+    message_type: Optional[str] = None
+    extra: Optional[dict] = None
+
 class MessageRead(MessageBase):
     message_id: UUID
     conversation_id: UUID

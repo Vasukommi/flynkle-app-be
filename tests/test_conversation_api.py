@@ -62,3 +62,23 @@ def test_plan_enforcement(client):
     )
     assert resp.status_code == 403
     assert resp.json()["message"] == "Upgrade required"
+
+
+def test_update_message(client):
+    user_id = create_user(client)
+    headers = {"X-User-ID": user_id}
+    conv = client.post("/api/v1/conversations", headers=headers, json={}).json()["data"]
+    msg = client.post(
+        f"/api/v1/conversations/{conv['conversation_id']}/messages",
+        headers=headers,
+        json={"content": {"t": 1}, "message_type": "user"},
+    ).json()["data"]
+    updated = client.patch(
+        f"/api/v1/messages/{msg['message_id']}",
+        headers=headers,
+        json={"content": {"t": 2}, "extra": {"edited": True}},
+    )
+    assert updated.status_code == 200
+    data = updated.json()["data"]
+    assert data["content"] == {"t": 2}
+    assert data["extra"] == {"edited": True}

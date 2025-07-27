@@ -1,7 +1,7 @@
 from .chat import ChatRequest, ChatResponse
 from .user import UserCreate, UserRead, UserUpdate
 from .conversation import ConversationCreate, ConversationRead, ConversationUpdate
-from .message import MessageCreate, MessageRead
+from .message import MessageCreate, MessageRead, MessageUpdate
 from .usage import UsageRead
 from pydantic import BaseModel
 
@@ -25,6 +25,7 @@ __all__ = [
     "ConversationUpdate",
     "MessageCreate",
     "MessageRead",
+    "MessageUpdate",
     "UsageRead",
     "LoginRequest",
     "TokenResponse",
