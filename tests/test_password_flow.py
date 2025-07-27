@@ -25,12 +25,12 @@ def db():
 def test_create_user_hashes_password(db):
     user_in = UserCreate(provider="email", email="test@example.com", password="secret")
     user = user_repo.create_user(db, user_in)
-    assert user.password_hash != "secret"
-    assert verify_password("secret", user.password_hash)
+    assert user.password != "secret"
+    assert verify_password("secret", user.password)
 
 def test_update_user_password(db):
     user_in = UserCreate(provider="email", email="update@example.com", password="old")
     user = user_repo.create_user(db, user_in)
     user_repo.update_user(db, user, UserUpdate(password="new"))
-    assert verify_password("new", user.password_hash)
-    assert not verify_password("old", user.password_hash)
+    assert verify_password("new", user.password)
+    assert not verify_password("old", user.password)
