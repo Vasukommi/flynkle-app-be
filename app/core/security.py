@@ -4,43 +4,59 @@ import time
 
 import jwt
 import redis
-from typing import Set, Dict
+from typing import Dict
 from passlib.context import CryptContext
 
 from app.core.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-_revoked_tokens: Set[str] = set()
+_revoked_tokens: Dict[str, float] = {}
 _refresh_tokens: Dict[str, float] = {}
 
 redis_client = None
-if hasattr(settings, "redis_url") and settings.redis_url:
-    try:
-        redis_client = redis.from_url(settings.redis_url, decode_responses=True)
-        # test connection
-        redis_client.ping()
-    except Exception:
-        redis_client = None
+
+
+def _get_redis_client():
+    """Lazily initialize and return a Redis client if possible."""
+    global redis_client
+    if redis_client is None and getattr(settings, "redis_url", None):
+        try:
+            client = redis.from_url(settings.redis_url, decode_responses=True)
+            client.ping()
+            redis_client = client
+        except Exception:
+            redis_client = None
+    return redis_client
 
 
 def revoke_token(token: str, expires: int) -> None:
     """Mark a token as revoked."""
-    global redis_client
-    if redis_client:
+    client = _get_redis_client()
+    if client:
         try:
-            redis_client.setex(f"revoked:{token}", expires, "1")
+            client.setex(f"revoked:{token}", expires, "1")
             return
         except Exception:
-            redis_client = None
-    _revoked_tokens.add(token)
+            # fall back to in-memory store
+            pass
+    _revoked_tokens[token] = time.time() + expires
 
 
 def is_token_revoked(token: str) -> bool:
     """Check whether the given token has been revoked."""
-    if redis_client:
-        return redis_client.exists(f"revoked:{token}") == 1
-    return token in _revoked_tokens
+    client = _get_redis_client()
+    if client:
+        try:
+            return client.exists(f"revoked:{token}") == 1
+        except Exception:
+            pass
+    expires_at = _revoked_tokens.get(token)
+    if expires_at:
+        if expires_at > time.time():
+            return True
+        del _revoked_tokens[token]
+    return False
 
 
 def create_refresh_token(user_id: UUID) -> str:
@@ -49,12 +65,11 @@ def create_refresh_token(user_id: UUID) -> str:
     payload = {"sub": str(user_id), "exp": expire, "type": "refresh"}
     token = jwt.encode(payload, settings.secret_key, algorithm=settings.jwt_algorithm)
     ttl = int((expire - datetime.utcnow()).total_seconds())
-    global redis_client
-    if redis_client:
+    client = _get_redis_client()
+    if client:
         try:
-            redis_client.setex(f"refresh:{token}", ttl, str(user_id))
+            client.setex(f"refresh:{token}", ttl, str(user_id))
         except Exception:
-            redis_client = None
             _refresh_tokens[token] = time.time() + ttl
     else:
         _refresh_tokens[token] = time.time() + ttl
@@ -62,23 +77,22 @@ def create_refresh_token(user_id: UUID) -> str:
 
 
 def revoke_refresh_token(token: str) -> None:
-    global redis_client
-    if redis_client:
+    client = _get_redis_client()
+    if client:
         try:
-            redis_client.delete(f"refresh:{token}")
+            client.delete(f"refresh:{token}")
             return
         except Exception:
-            redis_client = None
+            pass
     _refresh_tokens.pop(token, None)
 
 
 def decode_refresh_token(token: str) -> UUID:
-    global redis_client
-    if redis_client:
+    client = _get_redis_client()
+    if client:
         try:
-            exists = redis_client.exists(f"refresh:{token}") == 1
+            exists = client.exists(f"refresh:{token}") == 1
         except Exception:
-            redis_client = None
             expires_at = _refresh_tokens.get(token)
             exists = expires_at and expires_at > time.time()
     else:

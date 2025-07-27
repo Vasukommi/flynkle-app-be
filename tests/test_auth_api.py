@@ -107,3 +107,43 @@ def test_email_verification_flow(client):
     headers = {"Authorization": f"Bearer {token}"}
     user_data = client.get(f"/api/v1/users/{user_id}", headers=headers)
     assert user_data.json()["data"]["is_verified"] is True
+
+
+def test_refresh_with_access_token(client):
+    email = "access@example.com"
+    create_user(client, email=email)
+    tokens = login(client, email=email).json()["data"]
+    access = tokens["access_token"]
+    resp = client.post("/api/v1/auth/refresh", headers={"X-Refresh-Token": access})
+    assert resp.status_code == 401
+
+
+def test_verify_with_refresh_token(client):
+    email = "refresh@example.com"
+    create_user(client, email=email)
+    refresh = login(client, email=email).json()["data"]["refresh_token"]
+    resp = client.post(
+        "/api/v1/auth/verify", headers={"Authorization": f"Bearer {refresh}"}
+    )
+    assert resp.status_code == 401
+
+
+def test_otp_rate_limit(client):
+    email = "limit@example.com"
+    create_user(client, email=email)
+    for _ in range(5):
+        assert client.post("/api/v1/auth/request-reset", json={"email": email}).status_code == 200
+    resp = client.post("/api/v1/auth/request-reset", json={"email": email})
+    assert resp.status_code == 429
+
+
+def test_otp_cannot_be_reused(client):
+    email = "reuse@example.com"
+    create_user(client, email=email)
+    resp = client.post("/api/v1/auth/request-verify", json={"email": email})
+    otp = resp.json()["data"]["otp"]
+    ok = client.post("/api/v1/auth/verify-email", json={"email": email, "otp": otp})
+    assert ok.status_code == 200
+    bad = client.post("/api/v1/auth/verify-email", json={"email": email, "otp": otp})
+    assert bad.status_code == 400
+
