@@ -106,11 +106,13 @@ limited. The `/auth/logout` endpoint now invalidates the provided token and
 | PATCH | `/api/v1/conversations/{conversation_id}` | Update conversation |
 | DELETE | `/api/v1/conversations/{conversation_id}` | Delete conversation |
 | DELETE | `/api/v1/conversations` | Bulk delete conversations |
+| GET | `/api/v1/conversations/export` | Export conversation summaries |
 | GET | `/api/v1/conversations/{conversation_id}/messages` | List messages in conversation |
 | POST | `/api/v1/conversations/{conversation_id}/messages` | Create message in conversation |
 | GET | `/api/v1/messages/{message_id}` | Get message |
 | PATCH | `/api/v1/messages/{message_id}` | Update message |
 | DELETE | `/api/v1/messages/{message_id}` | Delete message |
+| GET | `/api/v1/messages/search` | Search messages |
 | POST | `/api/v1/uploads` | Upload file |
 | GET | `/api/v1/uploads` | List user uploads |
 | DELETE | `/api/v1/uploads/{upload_id}` | Delete uploaded file |

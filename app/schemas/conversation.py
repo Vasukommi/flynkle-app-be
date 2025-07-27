@@ -20,3 +20,11 @@ class ConversationRead(ConversationBase):
     updated_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ConversationSummary(BaseModel):
+    conversation_id: UUID
+    title: Optional[str] = None
+    message_count: int
+
+    model_config = ConfigDict(from_attributes=True)

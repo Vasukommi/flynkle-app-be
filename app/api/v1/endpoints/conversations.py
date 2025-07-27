@@ -18,6 +18,7 @@ from app.schemas import (
     ConversationCreate,
     ConversationRead,
     ConversationUpdate,
+    ConversationSummary,
     MessageUpdate,
     MessageCreate,
     MessageRead,
@@ -38,6 +39,17 @@ def list_conversations(
     convos = convo_repo.list_conversations(db, current_user.user_id, query=q)
     logger.info("Listing conversations for %s", current_user.user_id)
     payload = [ConversationRead.model_validate(c) for c in convos]
+    return success(payload).dict()
+
+
+@router.get("/export", response_model=StandardResponse, summary="Export conversation summaries")
+def export_conversations(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> List[ConversationSummary]:
+    data = convo_repo.export_summaries(db, current_user.user_id)
+    logger.info("Exporting summaries for %s", current_user.user_id)
+    payload = [ConversationSummary.model_validate(d) for d in data]
     return success(payload).dict()
 
 
@@ -179,7 +191,7 @@ def create_message(
     )
     usage_repo.increment_message_count(db, current_user.user_id, date.today())
 
-    if msg_in.invoke_llm and msg_in.message_type == "user":
+    if msg_in.invoke_llm and msg_in.message_type in {"user", "ai", "tool"}:
         check_chat_rate_limit(current_user.user_id)
         tokens_used = daily.token_count or 0 if daily else 0
         if tokens_used >= plan["daily_tokens"]:
@@ -206,6 +218,18 @@ def create_message(
             )
 
     return success(MessageRead.model_validate(msg)).dict()
+
+
+@message_router.get("/search", response_model=StandardResponse, summary="Search messages")
+def search_messages_endpoint(
+    q: str,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> List[MessageRead]:
+    msgs = message_repo.search_messages(db, current_user.user_id, q)
+    logger.info("Searching messages for %s", current_user.user_id)
+    payload = [MessageRead.model_validate(m) for m in msgs]
+    return success(payload).dict()
 
 
 @message_router.get(

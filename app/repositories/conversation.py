@@ -2,6 +2,7 @@ from typing import List, Optional
 from uuid import UUID
 from sqlalchemy.orm import Session
 from app.models.conversation import Conversation
+from app.repositories.message import count_messages
 
 
 def create_conversation(db: Session, user_id: UUID, title: Optional[str] = None) -> Conversation:
@@ -49,3 +50,18 @@ def bulk_delete(db: Session, user_id: UUID, ids: List[UUID]) -> int:
     count = q.delete(synchronize_session=False)
     db.commit()
     return count
+
+
+def export_summaries(db: Session, user_id: UUID) -> List[dict]:
+    """Return conversation summaries with message counts."""
+    convos = list_conversations(db, user_id)
+    summaries = []
+    for conv in convos:
+        summaries.append(
+            {
+                "conversation_id": conv.conversation_id,
+                "title": conv.title,
+                "message_count": count_messages(db, conv.conversation_id),
+            }
+        )
+    return summaries

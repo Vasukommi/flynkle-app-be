@@ -1,7 +1,9 @@
 from typing import List, Optional
 from uuid import UUID
 from sqlalchemy.orm import Session
+from sqlalchemy import func, String, cast
 from app.models.message import Message
+from app.models.conversation import Conversation
 
 
 def create_message(db: Session, conversation_id: UUID, user_id: Optional[UUID], content: dict, message_type: str) -> Message:
@@ -49,3 +51,25 @@ def delete_message(db: Session, msg: Message) -> Message:
     db.delete(msg)
     db.commit()
     return msg
+
+
+def count_messages(db: Session, conversation_id: UUID) -> int:
+    """Return message count for a conversation."""
+    return (
+        db.query(func.count(Message.message_id))
+        .filter(Message.conversation_id == conversation_id)
+        .scalar()
+    ) or 0
+
+
+def search_messages(db: Session, user_id: UUID, query: str) -> List[Message]:
+    """Search a user's messages by content."""
+    pattern = f"%{query}%"
+    return (
+        db.query(Message)
+        .join(Conversation, Message.conversation_id == Conversation.conversation_id)
+        .filter(Conversation.user_id == user_id)
+        .filter(cast(Message.content, String).ilike(pattern))
+        .order_by(Message.timestamp.desc())
+        .all()
+    )
