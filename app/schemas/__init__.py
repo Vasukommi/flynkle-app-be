@@ -1,6 +1,11 @@
 from .chat import ChatRequest, ChatResponse
 from .user import UserCreate, UserRead, UserUpdate
-from .conversation import ConversationCreate, ConversationRead, ConversationUpdate
+from .conversation import (
+    ConversationCreate,
+    ConversationRead,
+    ConversationUpdate,
+    ConversationSummary,
+)
 from .message import MessageCreate, MessageRead, MessageUpdate
 from .usage import UsageRead
 from .upload import UploadRead
@@ -25,6 +30,7 @@ __all__ = [
     "ConversationCreate",
     "ConversationRead",
     "ConversationUpdate",
+    "ConversationSummary",
     "MessageCreate",
     "MessageRead",
     "MessageUpdate",

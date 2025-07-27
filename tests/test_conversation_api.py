@@ -48,8 +48,8 @@ def create_token(client):
     return resp.json()["data"]["access_token"]
 
 
-def create_user(client):
-    data = {"provider": "email", "email": "convuser@example.com", "password": "pwd"}
+def create_user(client, email="convuser@example.com"):
+    data = {"provider": "email", "email": email, "password": "pwd"}
     resp = client.post("/api/v1/users", json=data)
     return resp.json()["data"]["user_id"]
 
@@ -118,7 +118,7 @@ def test_token_limit_enforced(client, monkeypatch):
     headers = {"Authorization": f"Bearer {token}"}
     conv = client.post("/api/v1/conversations", headers=headers, json={}).json()["data"]
     import app.core.plans as plans
-
+    original_tokens = plans.PLANS["free"]["daily_tokens"]
     plans.PLANS["free"]["daily_tokens"] = 2
     import app.api.v1.endpoints.conversations as conv_ep
 
@@ -141,6 +141,7 @@ def test_token_limit_enforced(client, monkeypatch):
         assert resp.status_code == 403
     finally:
         conv_ep.check_message_rate_limit = orig_rate
+        plans.PLANS["free"]["daily_tokens"] = original_tokens
 
 
 def test_downgrade_blocked_when_over_quota(client):
@@ -154,11 +155,17 @@ def test_downgrade_blocked_when_over_quota(client):
     assert resp.status_code == 400
 
 
-def create_auth(client):
-    uid = create_user(client)
-    token = client.post(
-        "/api/v1/auth/login", json={"email": "convuser@example.com", "password": "pwd"}
-    ).json()["data"]["access_token"]
+def create_auth(client, email="convuser@example.com"):
+    if email == "convuser@example.com":
+        # ensure unique email to avoid rate limit between tests
+        import uuid
+        email = f"conv{uuid.uuid4()}@example.com"
+    uid = create_user(client, email=email)
+    token_resp = client.post(
+        "/api/v1/auth/login", json={"email": email, "password": "pwd"}
+    )
+    assert token_resp.status_code == 200
+    token = token_resp.json()["data"]["access_token"]
     return uid, {"Authorization": f"Bearer {token}"}
 
 
@@ -252,3 +259,45 @@ def test_file_upload_and_message(client, monkeypatch):
         json={"content": {"url": url, "name": "t.txt"}, "message_type": "file"},
     )
     assert msg_resp.status_code == 200
+
+
+def test_export_and_search(client):
+    _, headers = create_auth(client)
+    conv = client.post("/api/v1/conversations", headers=headers, json={"title": "S"}).json()["data"]
+    cid = conv["conversation_id"]
+    client.post(
+        f"/api/v1/conversations/{cid}/messages",
+        headers=headers,
+        json={"content": {"text": "hello"}, "message_type": "user"},
+    )
+    client.post(
+        f"/api/v1/conversations/{cid}/messages",
+        headers=headers,
+        json={"content": {"text": "keyword"}, "message_type": "user"},
+    )
+    exp = client.get("/api/v1/conversations/export", headers=headers)
+    assert exp.status_code == 200
+    assert exp.json()["data"][0]["message_count"] == 2
+    search = client.get("/api/v1/messages/search", headers=headers, params={"q": "keyword"})
+    assert search.status_code == 200
+    assert len(search.json()["data"]) == 1
+
+
+def test_llm_trigger_tool(client, monkeypatch):
+    _, headers = create_auth(client)
+    conv = client.post("/api/v1/conversations", headers=headers, json={}).json()["data"]
+    cid = conv["conversation_id"]
+    import app.api.v1.endpoints.conversations as conv_ep
+
+    monkeypatch.setattr(conv_ep, "chat_with_openai", lambda m: ("ok", 1))
+    monkeypatch.setattr(conv_ep, "check_message_rate_limit", lambda _u: None)
+
+    resp = client.post(
+        f"/api/v1/conversations/{cid}/messages",
+        headers=headers,
+        json={"content": {"data": 1}, "message_type": "tool", "invoke_llm": True},
+    )
+    assert resp.status_code == 200
+    msgs = client.get(f"/api/v1/conversations/{cid}/messages", headers=headers).json()["data"]
+    assert len(msgs) == 2
+    assert msgs[-1]["message_type"] == "ai"

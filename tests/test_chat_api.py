@@ -82,3 +82,21 @@ def test_chat_token_quota(client, monkeypatch):
         assert resp.status_code == 200
     resp = client.post("/api/v1/chat", headers=headers, json={"message": "again", "conversation_id": conv["conversation_id"]})
     assert resp.status_code == 403
+
+
+def test_chat_message_quota(client, monkeypatch):
+    token = create_user_and_login(client)
+    headers = {"Authorization": f"Bearer {token}"}
+    conv = client.post("/api/v1/conversations", headers=headers, json={}).json()["data"]
+    import app.core.plans as plans
+    original = plans.PLANS["free"]["daily_messages"]
+    plans.PLANS["free"]["daily_messages"] = 2
+    import app.api.v1.endpoints.chat as chat_ep
+    monkeypatch.setattr(chat_ep, "check_chat_rate_limit", lambda _u: None)
+    monkeypatch.setattr(chat_ep, "chat_with_openai_history", lambda m: ("ok", 1))
+    for _ in range(2):
+        resp = client.post("/api/v1/chat", headers=headers, json={"message": "hi", "conversation_id": conv["conversation_id"]})
+        assert resp.status_code == 200
+    resp = client.post("/api/v1/chat", headers=headers, json={"message": "again", "conversation_id": conv["conversation_id"]})
+    assert resp.status_code == 403
+    plans.PLANS["free"]["daily_messages"] = original
