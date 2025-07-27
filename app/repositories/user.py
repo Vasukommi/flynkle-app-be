@@ -12,7 +12,7 @@ from app.core.security import hash_password
 def create_user(db: Session, user_in: UserCreate) -> User:
     data = user_in.dict(exclude_unset=True)
     password = data.pop("password")
-    user = User(**data, password_hash=hash_password(password))
+    user = User(**data, password=hash_password(password))
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -20,7 +20,7 @@ def create_user(db: Session, user_in: UserCreate) -> User:
 
 
 def get_user(db: Session, user_id: UUID) -> Optional[User]:
-    return db.query(User).filter(User.user_id == user_id, User.is_deleted.is_(False)).first()
+    return db.query(User).filter(User.user_id == user_id).first()
 
 
 def update_user(db: Session, user: User, user_in: UserUpdate) -> User:
@@ -29,21 +29,20 @@ def update_user(db: Session, user: User, user_in: UserUpdate) -> User:
     for field, value in update_data.items():
         setattr(user, field, value)
     if password:
-        user.password_hash = hash_password(password)
+        user.password = hash_password(password)
     db.commit()
     db.refresh(user)
     return user
 
 
 def delete_user(db: Session, user: User) -> User:
-    user.is_deleted = True
+    db.delete(user)
     db.commit()
-    db.refresh(user)
     return user
 
 
 def list_users(db: Session, skip: int = 0, limit: int = 100, search: Optional[str] = None) -> List[User]:
-    query = db.query(User).filter(User.is_deleted.is_(False))
+    query = db.query(User)
     if search:
         pattern = f"%{search}%"
         query = query.filter(or_(User.email.ilike(pattern), User.phone_number.ilike(pattern)))

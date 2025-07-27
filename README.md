@@ -57,6 +57,6 @@ alembic upgrade head
 | POST | `/api/v1/users` | Create a new user |
 | GET | `/api/v1/users/{user_id}` | Retrieve a user by ID |
 | PUT | `/api/v1/users/{user_id}` | Update a user |
-| DELETE | `/api/v1/users/{user_id}` | Soft delete a user |
+| DELETE | `/api/v1/users/{user_id}` | Delete a user |
 | GET | `/` | Returns a welcome message (not in the OpenAPI schema) |
 
