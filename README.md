@@ -78,7 +78,7 @@ limited. The `/auth/logout` endpoint now invalidates the provided token and
 | Method | Path | Description |
 | ------ | ---- | ----------- |
 | GET | `/api/v1/health` | Returns `{"status": "ok"}` |
-| POST | `/api/v1/chat` | Chat with OpenAI GPT-4. Body: `{"message": "<text>"}`. Returns `{"response": "<reply>"}` |
+| POST | `/api/v1/chat` | Chat with OpenAI GPT-4. Body: `{"message": "<text>", "conversation_id": "<uuid>"}`. Returns `{"response": "<reply>", "tokens": <n>}` |
 | GET | `/api/v1/users` | List users with pagination and search |
 | POST | `/api/v1/users` | Create a new user |
 | GET | `/api/v1/users/{user_id}` | Retrieve a user by ID |

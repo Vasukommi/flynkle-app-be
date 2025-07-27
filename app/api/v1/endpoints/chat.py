@@ -7,10 +7,12 @@ from fastapi.concurrency import run_in_threadpool
 from app.core import success, StandardResponse
 from app.db.database import get_db
 from app.schemas.chat import ChatRequest
-from app.services.llm import chat_with_openai
+from app.services.llm import chat_with_openai_history
 from app.services import check_chat_rate_limit
 from app.core import PLANS
 from app.repositories import usage as usage_repo
+from app.repositories import conversation as convo_repo
+from app.repositories import message as message_repo
 from app.api.deps import get_current_user
 
 router = APIRouter()
@@ -37,15 +39,61 @@ async def chat(
     # rate limiting
     check_chat_rate_limit(current_user.user_id)
 
+    history = [
+        {
+            "role": "system",
+            "content": (
+                "You are Flynkle, a witty, deeply personal AI assistant who speaks "
+                "like a friend and doesn't say 'As an AI...'"
+            ),
+        }
+    ]
+    if request.conversation_id:
+        convo = convo_repo.get_conversation(db, request.conversation_id)
+        if not convo or convo.user_id != current_user.user_id:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        msgs = message_repo.list_messages(db, request.conversation_id)
+        for m in msgs:
+            if m.message_type == "user":
+                role = "user"
+            elif m.message_type == "ai":
+                role = "assistant"
+            else:
+                continue
+            text = m.content.get("text") if isinstance(m.content, dict) else str(m.content)
+            history.append({"role": role, "content": text})
+    history.append({"role": "user", "content": request.message})
+
     try:
-        content, tokens = await run_in_threadpool(chat_with_openai, request.message)
+        content, tokens = await run_in_threadpool(chat_with_openai_history, history)
     except RuntimeError as exc:  # pragma: no cover - LLM errors
         logger.exception("LLM request failed")
-        raise HTTPException(status_code=502, detail="LLM request failed") from exc
+        raise HTTPException(
+            status_code=502,
+            detail={"message": "OpenAI request failed", "data": {"source": "openai", "reason": str(exc)}},
+        ) from exc
     except Exception as exc:  # pragma: no cover - unexpected errors
         logger.exception("Unexpected chat failure")
-        raise HTTPException(status_code=500, detail="Internal error") from exc
+        raise HTTPException(
+            status_code=500,
+            detail={"message": "Internal error", "data": {"source": "server", "reason": "unexpected"}},
+        ) from exc
 
+    if request.conversation_id:
+        message_repo.create_message(
+            db,
+            request.conversation_id,
+            current_user.user_id,
+            {"text": request.message},
+            "user",
+        )
+        message_repo.create_message(
+            db,
+            request.conversation_id,
+            None,
+            {"text": content},
+            "ai",
+        )
     usage_repo.increment_message_count(db, current_user.user_id, date.today())
     usage_repo.increment_token_count(db, current_user.user_id, date.today(), tokens)
     return success({"response": content, "tokens": tokens}).dict()

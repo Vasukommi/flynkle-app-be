@@ -33,7 +33,12 @@ async def handle_db_exceptions(request: Request, exc: SQLAlchemyError):
 @app.exception_handler(HTTPException)
 async def handle_http_exceptions(request: Request, exc: HTTPException):
     """Return a consistent JSON structure for HTTP errors."""
-    resp = success(message=exc.detail, code=exc.status_code)
+    message = exc.detail
+    data = None
+    if isinstance(exc.detail, dict):
+        message = exc.detail.get("message", "Error")
+        data = exc.detail.get("data")
+    resp = success(message=message, data=data, code=exc.status_code)
     return JSONResponse(status_code=exc.status_code, content=resp.dict())
 
 

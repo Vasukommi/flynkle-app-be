@@ -1,6 +1,6 @@
 """Service utilities for the API."""
 
-from .llm import chat_with_openai
+from .llm import chat_with_openai, chat_with_openai_history
 from .rate_limiter import (
     check_chat_rate_limit,
     check_login_rate_limit,
@@ -16,6 +16,7 @@ from .billing import charge_plan
 
 __all__ = [
     "chat_with_openai",
+    "chat_with_openai_history",
     "check_chat_rate_limit",
     "check_login_rate_limit",
     "check_message_rate_limit",
