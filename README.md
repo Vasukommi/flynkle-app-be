@@ -1,6 +1,14 @@
 # Flynkle API Backend
 
-This project contains a minimal FastAPI backend. The service exposes a single health check endpoint and can be run in Docker.
+This project contains a minimal FastAPI backend that demonstrates a few basic features.
+
+## About
+
+- Health check endpoint
+- Chat endpoint backed by OpenAI
+- Basic user management
+
+The aim of the project is to stay lightweight and easy to extend.
 
 ## Running with Docker Compose
 
@@ -43,5 +51,10 @@ alembic upgrade head
 | ------ | ---- | ----------- |
 | GET | `/api/v1/health` | Returns `{"status": "ok"}` |
 | POST | `/api/v1/chat` | Chat with OpenAI GPT-4. Body: `{"message": "<text>"}`. Returns `{"response": "<reply>"}` |
+| GET | `/api/v1/users` | List users with pagination and search |
+| POST | `/api/v1/users` | Create a new user |
+| GET | `/api/v1/users/{user_id}` | Retrieve a user by ID |
+| PUT | `/api/v1/users/{user_id}` | Update a user |
+| DELETE | `/api/v1/users/{user_id}` | Soft delete a user |
 | GET | `/` | Returns a welcome message (not in the OpenAPI schema) |
 

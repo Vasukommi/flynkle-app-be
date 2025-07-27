@@ -1,0 +1,43 @@
+from typing import List, Optional
+from uuid import UUID
+
+from sqlalchemy.orm import Session
+from sqlalchemy import or_
+
+from app.models.user import User
+from app.schemas.user import UserCreate, UserUpdate
+
+
+def create_user(db: Session, user_in: UserCreate) -> User:
+    user = User(**user_in.dict(exclude_unset=True))
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def get_user(db: Session, user_id: UUID) -> Optional[User]:
+    return db.query(User).filter(User.user_id == user_id, User.is_deleted.is_(False)).first()
+
+
+def update_user(db: Session, user: User, user_in: UserUpdate) -> User:
+    for field, value in user_in.dict(exclude_unset=True).items():
+        setattr(user, field, value)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def delete_user(db: Session, user: User) -> User:
+    user.is_deleted = True
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def list_users(db: Session, skip: int = 0, limit: int = 100, search: Optional[str] = None) -> List[User]:
+    query = db.query(User).filter(User.is_deleted.is_(False))
+    if search:
+        pattern = f"%{search}%"
+        query = query.filter(or_(User.email.ilike(pattern), User.phone_number.ilike(pattern)))
+    return query.order_by(User.created_at.desc()).offset(skip).limit(limit).all()
