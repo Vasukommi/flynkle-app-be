@@ -2,6 +2,9 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
+# Ensure our modules can be imported when running CLI tools like Alembic
+ENV PYTHONPATH=/app
+
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
