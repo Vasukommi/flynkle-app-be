@@ -13,7 +13,7 @@ from app.repositories import message as message_repo
 from app.repositories import usage as usage_repo
 from app.api.v1.endpoints.plans import PLANS
 from app.services.llm import chat_with_openai
-from app.services import check_chat_rate_limit
+from app.services import check_chat_rate_limit, check_message_rate_limit
 from app.schemas import (
     ConversationCreate,
     ConversationRead,
@@ -140,6 +140,7 @@ def create_message(
     convo = convo_repo.get_conversation(db, conversation_id)
     if not convo or convo.user_id != current_user.user_id:
         raise HTTPException(status_code=404, detail="Conversation not found")
+    check_message_rate_limit(current_user.user_id)
     # plan enforcement using configured plans
     plan = PLANS.get(current_user.plan, PLANS["free"])
     daily = usage_repo.get_daily_usage(db, current_user.user_id, date.today())

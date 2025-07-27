@@ -67,6 +67,8 @@ Login returns a JWT token. Include it in the `Authorization` header as
 `Bearer <token>` when accessing protected routes. Only active, non-suspended
 users can log in. Login is rate limited and `/auth/logout` invalidates the
 token while `/auth/verify` checks it.
+Message creation and `/chat` requests are also rate limited to prevent abuse.
+Successful login updates the `last_login` timestamp for the user.
 
 ## API Endpoints
 

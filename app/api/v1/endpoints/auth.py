@@ -32,6 +32,7 @@ def login(credentials: LoginRequest, db: Session = Depends(get_db)) -> dict:
         logger.warning("Inactive/suspended login attempt for %s", credentials.email)
         raise HTTPException(status_code=403, detail="Account disabled")
     token = create_access_token(user.user_id)
+    user_repo.update_last_login(db, user)
     logger.info("User %s logged in", user.user_id)
     return success(TokenResponse(access_token=token)).dict()
 

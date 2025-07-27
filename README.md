@@ -9,6 +9,9 @@ This project contains a minimal FastAPI backend that demonstrates a few basic fe
 - Basic user management
 - Users have a `plan` field with `free` as the default
 - Users have an `is_admin` flag for admin access
+- Usage tracking captures daily message count, tokens and file uploads
+- Login updates the `last_login` timestamp
+- Chat, login and message creation endpoints are rate limited
 
 The aim of the project is to stay lightweight and easy to extend.
 
@@ -122,4 +125,11 @@ messages they can send per day. Exceeding these limits returns "Upgrade required
 Set `is_admin` to `true` on a user to grant admin rights. Admin endpoints
 require the `X-User-ID` header of an admin user. The old `X-Admin` header is no
 longer used.
+
+## Future Enhancements
+
+- Replace in-memory rate limiting with Redis for horizontal scaling
+- Add background job queue for long running tasks
+- Implement OAuth providers for enterprise authentication
+- Provide OpenAPI schemas for client code generation
 
