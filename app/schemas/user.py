@@ -15,6 +15,7 @@ class UserBase(BaseModel):
     profile: Optional[dict] = None
     is_active: Optional[bool] = True
     is_suspended: Optional[bool] = False
+    is_admin: Optional[bool] = False
     plan: Optional[str] = "free"
 
 

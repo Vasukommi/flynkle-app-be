@@ -21,6 +21,7 @@ class User(Base):
     verified_at = Column(DateTime, nullable=True)
     is_active = Column(Boolean, default=True)
     is_suspended = Column(Boolean, default=False)
+    is_admin = Column(Boolean, default=False)
 
     plan = Column(String, default="free")
 
