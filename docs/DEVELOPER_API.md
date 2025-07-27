@@ -64,8 +64,9 @@ Errors follow the same structure with an appropriate status code.
 ### Authentication
 
 Login returns a JWT token. Include it in the `Authorization` header as
-`Bearer <token>` when accessing protected routes. Logout and verify use the
-same header.
+`Bearer <token>` when accessing protected routes. Only active, non-suspended
+users can log in. Login is rate limited and `/auth/logout` invalidates the
+token while `/auth/verify` checks it.
 
 ## API Endpoints
 
@@ -79,6 +80,7 @@ The current service exposes a minimal set of endpoints:
 | POST   | `/api/v1/users` | Create a new user |
 | GET    | `/api/v1/users/{user_id}` | Retrieve a user by ID |
 | PUT    | `/api/v1/users/{user_id}` | Update a user |
+| PATCH  | `/api/v1/users/{user_id}` | Partially update a user |
 | DELETE | `/api/v1/users/{user_id}` | Delete a user |
 | POST   | `/api/v1/auth/login` | Login and receive a token |
 | POST   | `/api/v1/auth/logout` | Logout using token |
@@ -100,6 +102,11 @@ The current service exposes a minimal set of endpoints:
 | DELETE | `/api/v1/messages/{message_id}` | Delete message |
 | GET    | `/api/v1/admin/users` | Admin list users |
 | PATCH  | `/api/v1/admin/users/{user_id}` | Admin update user |
+
+### User actions
+
+`PATCH` and `DELETE` on user routes require authentication via the
+`Authorization` header or `X-User-ID`.
 
 This table matches the one in the main `README.md` and should be updated whenever routes change.
 
