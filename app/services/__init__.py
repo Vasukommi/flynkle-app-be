@@ -5,6 +5,7 @@ from .rate_limiter import (
     check_chat_rate_limit,
     check_login_rate_limit,
     check_message_rate_limit,
+    check_otp_rate_limit,
 )
 from .password_reset import (
     generate_otp,
@@ -21,6 +22,7 @@ __all__ = [
     "check_chat_rate_limit",
     "check_login_rate_limit",
     "check_message_rate_limit",
+    "check_otp_rate_limit",
     "generate_otp",
     "verify_and_consume_otp",
     "generate_verification_token",

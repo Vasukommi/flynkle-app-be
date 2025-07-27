@@ -11,7 +11,7 @@ This project contains a minimal FastAPI backend that demonstrates a few basic fe
 - Users have an `is_admin` flag for admin access
 - Usage tracking captures daily message count, tokens and file uploads
 - Login updates the `last_login` timestamp
-- Chat, login and message creation endpoints are rate limited
+- Chat, login, OTP request and message creation endpoints are rate limited
 
 The aim of the project is to stay lightweight and easy to extend.
 

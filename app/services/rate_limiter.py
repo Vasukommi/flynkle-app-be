@@ -12,6 +12,7 @@ RATE_LIMIT_COUNT = 5
 _chat_log: dict[UUID, deque[float]] = defaultdict(deque)
 _login_log: dict[str, deque[float]] = defaultdict(deque)
 _message_log: dict[UUID, deque[float]] = defaultdict(deque)
+_otp_log: dict[str, deque[float]] = defaultdict(deque)
 
 
 def _prune(q: deque[float]) -> None:
@@ -44,4 +45,13 @@ def check_message_rate_limit(user_id: UUID) -> None:
     _prune(q)
     if len(q) >= RATE_LIMIT_COUNT:
         raise HTTPException(status_code=429, detail="Too many messages")
+    q.append(time.time())
+
+
+def check_otp_rate_limit(identifier: str) -> None:
+    """Limit OTP/verification requests for the same identifier."""
+    q = _otp_log[identifier]
+    _prune(q)
+    if len(q) >= RATE_LIMIT_COUNT:
+        raise HTTPException(status_code=429, detail="Too many requests")
     q.append(time.time())
